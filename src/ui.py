@@ -1,13 +1,15 @@
 from PyQt5.QtWidgets import (
     QMainWindow,
     QMessageBox,
+    QScrollArea,
     QWidget,
     QMenuBar,
+    QLabel,
     QAction,
     QWidget,
 )
 
-from PyQt5.QtCore import pyqtSlot
+from img import Image
 
 """
 The MIT License (MIT)
@@ -53,9 +55,6 @@ class uiMainWindow(QMainWindow):
         self.height = 720
         self.build()
 
-    def btn_click(self):
-        QMessageBox.information(self, "test", "message test", QMessageBox.Ok, QMessageBox.Ok)
-
     def build(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
@@ -85,3 +84,19 @@ class uiMainWindow(QMainWindow):
         ## About menu
         menu_about = menu.addMenu("About")
         menu_about.addAction(button_license)
+
+        #### Loading image, test
+        
+        tiff_img = Image('../tif/20170407080916_MSG2.tif')
+        #tiff_img = Image('../tif/20170407054917_MSG2.tif')
+        #tiff_img = Image('../Lenna.png')
+
+        img_viewer = QLabel()
+        pixmap = tiff_img.cvt_to_QPixmap()
+        img_viewer.setPixmap(pixmap)
+        
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(img_viewer)
+
+        self.setCentralWidget(scroll_area)
+

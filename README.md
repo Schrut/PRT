@@ -8,9 +8,11 @@ __Thibault HECKEL__
 __Florian GIMENEZ__
 
 ## Dépendances :
-- `Python 3.6+`
-- `PyQt5 5.10 (interface graphique)`
-- `OpenStreetMap (OSM)`
+- [Python](https://docs.python.org/3/)
+- [PyQt5](https://pypi.python.org/pypi/PyQt5)
+- [numpy](https://pypi.python.org/pypi/numpy/1.14.0)
+- [opencv-python](https://pypi.python.org/pypi/opencv-python)
+- [osmapi](https://pypi.python.org/pypi/osmapi)
 
 ## Lancer le programme :
 ```bash
