@@ -3,11 +3,16 @@
 
 ## Sujet n°8 : Stabilisation, géolocalisation précise et re-échantillonage spatial et temporel d'images de satellites météo géostationnaires.
 
-Binôme:  
+Binôme :  
 __Thibault HECKEL__   
 __Florian GIMENEZ__
 
 ## Dépendances :
-- `Python 3.x`
-- `PyQt5 (interface graphique)`
+- `Python 3.6+`
+- `PyQt5 5.10 (interface graphique)`
 - `OpenStreetMap (OSM)`
+
+## Lancer le programme :
+```bash
+cd /src && python3 main.py
+```
