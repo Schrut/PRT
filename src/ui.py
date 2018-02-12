@@ -5,9 +5,6 @@ from PyQt5.QtWidgets import (
     QMenuBar,
     QAction,
     QWidget,
-    QDialog,
-    QLabel,
-    QMenu,
 )
 
 from PyQt5.QtCore import pyqtSlot
@@ -19,7 +16,9 @@ https://mit-license.org/
 class uiLicenseWindow(QMessageBox):
     def __init__(self, window):
         super().__init__(window)
+        self.window = window
         self.title = "The MIT License (MIT)"
+        #Hardcoded License
         self.license = "<pre><b>Copyright © 2018  <i>~ Thibault HECKEL, Florian GIMENEZ ~</i></b><br><br>\
 Permission is hereby granted, free of charge, to any person obtaining a copy <br>\
 of this software and associated documentation files (the “Software”), <br>\
@@ -37,11 +36,8 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE <br>\
 OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</pre><br>\
 Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource.org/licenses/MIT</a>"
-
-        self.window = window
     
     def on_clik(self):
-        self.license.center
         self.information(self.window, self.title, self.license, QMessageBox.Ok)
 
 """
@@ -58,11 +54,13 @@ class uiMainWindow(QMainWindow):
         self.build()
 
     def btn_click(self):
-            QMessageBox.information(self, "test", "message test", QMessageBox.Ok, QMessageBox.Ok)
+        QMessageBox.information(self, "test", "message test", QMessageBox.Ok, QMessageBox.Ok)
 
     def build(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
+
+        # TODO: Add other entries & buttons
         
         # Buttons
         ## Exit button
