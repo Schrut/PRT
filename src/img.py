@@ -36,16 +36,22 @@ class Image():
         
         self.metadata = cv2.imread(pathname, cv2.IMREAD_ANYDEPTH)
         print("NB-Bits DEPTH:", self.metadata.dtype)
+        print("Shape:", self.metadata.shape)
         return True
 
     def cvt_to_QImage(self):
-        cv_img = self.metadata.astype('uint8') # Convert 16-bit to 8-bit 
+        #cv_img = (self.metadata).astype('uint8') # Convert 16-bit to 8-bit
+        #cv_img = cv2.merge((self.metadata, self.metadata, self.metadata))
+        #cv_img = cv2.cvtColor(self.metadata, cv2.)
+        cv_img = cv2.cvtColor(self.metadata, cv2.COLOR_GRAY2BGR)
+        # Debug
+        cv2.imwrite("./cv_img.png", cv_img)
 
         # Debug
         print(cv_img.shape)
         print(cv_img.dtype)
 
-        q_img = QImage(cv_img, self.metadata.shape[1], self.metadata.shape[0], QImage.Format_Grayscale8)
+        q_img = QImage(cv_img, self.metadata.shape[1], self.metadata.shape[0], QImage.Format_RGB16)
         return q_img
         
     def cvt_to_QPixmap(self):
