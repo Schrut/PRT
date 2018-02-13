@@ -90,25 +90,25 @@ class uiMainWindow(QMainWindow):
 
         #### Loading image, test
         
-        #tiff_img = Image('../tif/20170407080916_MSG2.tif')
+        tiff_img = Image('../tif/20170407080916_MSG2.tif')
         #tiff_img = Image('../tif/20170407054917_MSG2.tif')
         #tiff_img = Image('../Lenna.png')
 
-        #img_viewer = QLabel()
-        #img_viewer.setPixmap(tiff_img.cvt_to_QPixmap())
+        img_viewer = QLabel()
+        img_viewer.setPixmap(tiff_img.cvt_to_QPixmap())
         
-        #scroll_area = QScrollArea()
-        #scroll_area.setWidget(img_viewer)
-
-        #self.setCentralWidget(scroll_area)
-
-
-        tiff = plt.imread('../tif/20170407054917_MSG2.tif')
-
-        self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
-
         scroll_area = QScrollArea()
-        scroll_area.setWidget(self.canvas)
+        scroll_area.setWidget(img_viewer)
 
         self.setCentralWidget(scroll_area)
+
+
+        #tiff = plt.imread('../tif/20170407054917_MSG2.tif')
+
+        #self.figure = plt.figure()
+        #self.canvas = FigureCanvas(self.figure)
+
+        #scroll_area = QScrollArea()
+        #scroll_area.setWidget(self.canvas)
+
+        #self.setCentralWidget(scroll_area)
