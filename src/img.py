@@ -40,10 +40,10 @@ class Image():
         return True
 
     def cvt_to_QImage(self):
-        #cv_img = (self.metadata).astype('uint8') # Convert 16-bit to 8-bit
+        cv_img = (self.metadata).astype('uint8') # Convert 16-bit to 8-bit
         #cv_img = cv2.merge((self.metadata, self.metadata, self.metadata))
         #cv_img = cv2.cvtColor(self.metadata, cv2.)
-        cv_img = cv2.cvtColor(self.metadata, cv2.COLOR_GRAY2BGR)
+        #cv_img = cv2.cvtColor(self.metadata, cv2.COLOR_GRAY2RGB)
         # Debug
         cv2.imwrite("./cv_img.png", cv_img)
 
@@ -51,7 +51,7 @@ class Image():
         print(cv_img.shape)
         print(cv_img.dtype)
 
-        q_img = QImage(cv_img, self.metadata.shape[1], self.metadata.shape[0], QImage.Format_RGB16)
+        q_img = QImage(cv_img, self.metadata.shape[1], self.metadata.shape[0], QImage.Format_Grayscale8)
         return q_img
         
     def cvt_to_QPixmap(self):
