@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
 from img import Image
 
 import matplotlib.pyplot as plt
+import matplotlib.figure as Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 """
@@ -90,25 +91,27 @@ class uiMainWindow(QMainWindow):
 
         #### Loading image, test
         
-        tiff_img = Image('../tif/20170407080916_MSG2.tif')
+        #tiff_img = Image('../tif/20170407080916_MSG2.tif')
         #tiff_img = Image('../tif/20170407054917_MSG2.tif')
         #tiff_img = Image('../Lenna.png')
 
-        img_viewer = QLabel()
-        img_viewer.setPixmap(tiff_img.cvt_to_QPixmap())
+        #img_viewer = QLabel()
+        #img_viewer.setPixmap(tiff_img.cvt_to_QPixmap())
         
-        scroll_area = QScrollArea()
-        scroll_area.setWidget(img_viewer)
-
-        self.setCentralWidget(scroll_area)
-
-
-        #tiff = plt.imread('../tif/20170407054917_MSG2.tif')
-
-        #self.figure = plt.figure()
-        #self.canvas = FigureCanvas(self.figure)
-
         #scroll_area = QScrollArea()
-        #scroll_area.setWidget(self.canvas)
+        #scroll_area.setWidget(img_viewer)
 
         #self.setCentralWidget(scroll_area)
+
+
+        tiff = plt.imread('../tif/20170407054917_MSG2.tif')
+        tiff = plt.imshow(tiff, cmap="gray")
+
+        self.figure = plt.show()
+        self.canvas = FigureCanvas(self.figure)
+
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(self.canvas)
+
+        self.setCentralWidget(scroll_area)
