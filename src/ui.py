@@ -104,8 +104,16 @@ class uiMainWindow(QMainWindow):
         #self.setCentralWidget(scroll_area)
 
 
+        # Du coup trouver comment bien utiliser matplotlib dans PyQt, 
+        # ça à l'air d'être une bonne idée.
+        # https://scipy-cookbook.readthedocs.io/items/Matplotlib_PySide.html
+
         tiff = plt.imread('../tif/20170407054917_MSG2.tif')
         tiff = plt.imshow(tiff, cmap="gray")
+
+        # hide tick values on X and Y axis
+        plt.xticks([])
+        plt.yticks([])  
 
         self.figure = plt.show()
         self.canvas = FigureCanvas(self.figure)
