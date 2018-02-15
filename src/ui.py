@@ -9,11 +9,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from img import Image
-
-import matplotlib.pyplot as plt
-import matplotlib.figure as Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from img import Tiff
 
 """
 The MIT License (MIT)
@@ -89,37 +85,14 @@ class uiMainWindow(QMainWindow):
         menu_about = menu.addMenu("About")
         menu_about.addAction(button_license)
 
+        ##################################################################
         #### Loading image, test
+        tiff = Tiff('../tif/20170407080916_MSG2.tif')
+
+        img_viewer = QLabel()
+        img_viewer.setPixmap(tiff.cvt_to_QPixmap())
         
-        #tiff_img = Image('../tif/20170407080916_MSG2.tif')
-        #tiff_img = Image('../tif/20170407054917_MSG2.tif')
-        #tiff_img = Image('../Lenna.png')
-
-        #img_viewer = QLabel()
-        #img_viewer.setPixmap(tiff_img.cvt_to_QPixmap())
-        
-        #scroll_area = QScrollArea()
-        #scroll_area.setWidget(img_viewer)
-
-        #self.setCentralWidget(scroll_area)
-
-
-        # Du coup trouver comment bien utiliser matplotlib dans PyQt, 
-        # ça à l'air d'être une bonne idée.
-        # https://scipy-cookbook.readthedocs.io/items/Matplotlib_PySide.html
-
-        tiff = plt.imread('../tif/20170407054917_MSG2.tif')
-        tiff = plt.imshow(tiff, cmap="gray")
-
-        # hide tick values on X and Y axis
-        plt.xticks([])
-        plt.yticks([])  
-
-        self.figure = plt.show()
-        self.canvas = FigureCanvas(self.figure)
-
-
         scroll_area = QScrollArea()
-        scroll_area.setWidget(self.canvas)
+        scroll_area.setWidget(img_viewer)
 
         self.setCentralWidget(scroll_area)

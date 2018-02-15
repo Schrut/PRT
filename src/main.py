@@ -1,8 +1,13 @@
-import sys
+"""
+    Tips for Visual Studio Code:
+        use `Python` extension from Microsoft with `pylint`.
+        use `Python Docstring` extension from Nils Werner.
+"""
 
-from PyQt5.QtWidgets import (
-    QApplication,
-)
+import sys
+import cv2
+import tifffile
+from PyQt5.QtWidgets import QApplication
 
 from ui import uiMainWindow
 

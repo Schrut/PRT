@@ -1,59 +1,91 @@
 """
 Image module
 
-TODO:
+TASK:
     -(OK) READ
-    -() WRITE
-    -() CONVERT to QImage
+    -(TODO) WRITE
+    -(OK) CONVERT to QImage
 
-TUTO for the openCV-python Lib:
+DEMO opencv-python lib:
     https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_core/py_basic_ops/py_basic_ops.html#basic-ops
+
+TO READ:
+    numpy array:
+        https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html
+
+    tiffile:
+        https://github.com/blink1073/tifffile
+
+    qimage2ndarray:
+        https://github.com/hmeine/qimage2ndarray
 """
 
 import os
-import cv2
+import tifffile as tf
+import qimage2ndarray as q2a
+import numpy as np
+
 from PyQt5.QtGui import QImage, QPixmap
 
-class Image():
+class Tiff():
+    """The Tiff class, represents a TIFF image in memory.
+    Attributes:
+        name -- image's name
+        pname -- image's path
+        metadata -- numpy.ndarray, image's bytes
+    """
 
     def __init__(self, pathname):
-        # Debug
-        print("OpenCV version: "+cv2.__version__)
-
+        """The Tiff class constructor.
+        
+        Arguments:
+            pathname {string} -- the relative or absolute image's path.
+        """
         if pathname.endswith(('.tiff', 'tif')):
             if self.load_from(pathname) == False:
                 print("Error while reading: image doesn't exists.")
+                exit()
             else:
+                self.name = os.path.basename(pathname)
+                self.pname = pathname
                 print("Done.")
         else:
             print("pathname doesn't contains TIFF extension.")
+            exit()
     
 
     def load_from(self, pathname):
+        """Load a TIFF image in memory.
+        
+        Arguments:
+            pathname {string} -- the relative or absolute image's path.
+        
+        Returns:
+            boolean -- True if image found.
+        """
         print("Loading '"+pathname+"' image.")
         if not os.path.exists(pathname):
             return False
         
-        #self.metadata = cv2.imread(pathname, cv2.IMREAD_ANYDEPTH)
-        #print("Shape ", self.metadata.shape)
-        #print("Bits ", self.metadata.dtype)
+        self.metadata = tf.imread(pathname)
+        print("Shape ", self.metadata.shape)
+        print("Bits ", self.metadata.dtype)
         return True
 
+
     def cvt_to_QImage(self):
-        #cv_img = (self.metadata).astype('uint8') # Convert 16-bit to 8-bit
-        #cv_img = cv2.merge((self.metadata, self.metadata, self.metadata))
-        #cv_img = cv2.cvtColor(self.metadata, cv2.COLOR_GRAY2RGB)
-        #cv_img = cv2.cvtColor(self.metadata, cv2.COLOR_GRAY2RGB)
-        #cv_img = self.metadata
-        # Debug
-        #cv2.imwrite("./cv_img.png", cv_img)
-
-        # Debug
-        #print(cv_img.shape)
-        #print(cv_img.dtype)
-
-        q_img = QImage(cv_img, self.metadata.shape[1], self.metadata.shape[0], QImage.Format_RGB888)
-        return q_img
+        """Convert the `self.metadata` field (numpy.ndarray) to a QImage
+        Thanks to qimage2ndarray library.
+        
+        Returns:
+            QImage -- https://doc.qt.io/qt-5/qimage.html
+        """
+        return q2a.gray2qimage(self.metadata)
         
     def cvt_to_QPixmap(self):
+        """Convert QImage to QPixmap.
+
+        Returns:
+            QPixmap -- https://doc.qt.io/qt-5/qpixmap.html
+        """
         return QPixmap.fromImage(self.cvt_to_QImage())
