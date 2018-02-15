@@ -73,7 +73,7 @@ class Tiff():
         return True
 
 
-    def cvt_to_QImage(self):
+    def to_QImage(self):
         """Convert the `self.metadata` field (numpy.ndarray) to a QImage
         Thanks to qimage2ndarray library.
         
@@ -82,10 +82,10 @@ class Tiff():
         """
         return q2a.gray2qimage(self.metadata)
         
-    def cvt_to_QPixmap(self):
+    def to_QPixmap(self):
         """Convert QImage to QPixmap.
 
         Returns:
             QPixmap -- https://doc.qt.io/qt-5/qpixmap.html
         """
-        return QPixmap.fromImage(self.cvt_to_QImage())
+        return QPixmap.fromImage(self.to_QImage())

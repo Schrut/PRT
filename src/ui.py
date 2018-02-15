@@ -90,7 +90,7 @@ class uiMainWindow(QMainWindow):
         tiff = Tiff('../tif/20170407080916_MSG2.tif')
 
         img_viewer = QLabel()
-        img_viewer.setPixmap(tiff.cvt_to_QPixmap())
+        img_viewer.setPixmap(tiff.to_QPixmap())
         
         scroll_area = QScrollArea()
         scroll_area.setWidget(img_viewer)
