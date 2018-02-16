@@ -2,9 +2,17 @@
 Image module
 
 TASK:
+
     -(OK) READ
-    -(TODO) WRITE
     -(OK) CONVERT to QImage
+    -(OK) CONVERT to QPixmap
+
+    -(TODO) WRITE
+    -(TODO) Pouvoir accéder à une liste d'image dans un dossier (Boîte de dialogue modale pour l'utilisateur).
+    -(TODO) Proposer différentes transformations grâce à GDAL, Mercator ...
+    -(TODO) Permettre la visualisation des images par dessus une map OSM (gérer la transparence/superposition).
+    -(TODO) Implémenter le zoom/dézoom (+tout ce que cela implique avec la transparence/superposition).
+    -(TODO) [...]
 
 DEMO opencv-python lib:
     https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_core/py_basic_ops/py_basic_ops.html#basic-ops
@@ -15,15 +23,24 @@ TO READ:
 
     tiffile:
         https://github.com/blink1073/tifffile
+        https://www.lfd.uci.edu/%7Egohlke/code/tifffile.py.html
 
     qimage2ndarray:
         https://github.com/hmeine/qimage2ndarray
+
+    smopy:
+        https://github.com/rossant/smopy
+        https://nbviewer.jupyter.org/github/rossant/smopy/blob/master/examples/example1.ipynb
 """
 
 import os
-import tifffile as tf
-import qimage2ndarray as q2a
+import gdal
+import smopy
 import numpy as np
+import qimage2ndarray as q2a
+
+#test
+
 
 from PyQt5.QtGui import QImage, QPixmap
 
@@ -67,7 +84,11 @@ class Tiff():
         if not os.path.exists(pathname):
             return False
         
-        self.metadata = tf.imread(pathname)
+        self.metadata = gdal.Open(pathname).ReadAsArray() # Convert TIFF to numpy.ndarray
+
+        # Les metadatas du TIFF, celles qui nous intéresses ici sont les fameuses GEOTIFF
+        print( gdal.Info(pathname) )
+
         print("Shape ", self.metadata.shape)
         print("Bits ", self.metadata.dtype)
         return True
@@ -76,11 +97,20 @@ class Tiff():
     def to_QImage(self):
         """Convert the `self.metadata` field (numpy.ndarray) to a QImage
         Thanks to qimage2ndarray library.
+        Normalize image (dynamic range expansion)
         
         Returns:
             QImage -- https://doc.qt.io/qt-5/qimage.html
         """
-        return q2a.gray2qimage(self.metadata)
+        _min = self.metadata.min()
+        _max = self.metadata.max()
+        return q2a.gray2qimage(self.metadata, (_min, _max))
+
+        #### smopy test lib ####
+        #_map = smopy.Map((48., -1., 52., 3.), z=5)
+        #_map.save_png('test.png')
+        #return QImage('test.png')
+        #### works great ####
         
     def to_QPixmap(self):
         """Convert QImage to QPixmap.

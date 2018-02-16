@@ -5,8 +5,6 @@
 """
 
 import sys
-import cv2
-import tifffile
 from PyQt5.QtWidgets import QApplication
 
 from ui import uiMainWindow

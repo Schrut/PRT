@@ -87,7 +87,8 @@ class uiMainWindow(QMainWindow):
 
         ##################################################################
         #### Loading image, test
-        tiff = Tiff('../tif/20170407080916_MSG2.tif')
+        #tiff = Tiff('../tif/20170407080916_MSG2.tif')
+        tiff = Tiff('../tif/france_mercator.tif')
 
         img_viewer = QLabel()
         img_viewer.setPixmap(tiff.to_QPixmap())
