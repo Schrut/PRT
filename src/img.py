@@ -34,6 +34,7 @@ TO READ:
 """
 
 import os
+import ogr
 import gdal
 import smopy
 import numpy as np
@@ -61,14 +62,14 @@ class Tiff():
         if pathname.endswith(('.tiff', 'tif')):
             if self.load_from(pathname) == False:
                 print("Error while reading: image doesn't exists.")
-                exit()
+                #exit()
             else:
                 self.name = os.path.basename(pathname)
                 self.pname = pathname
                 print("Done.")
         else:
             print("pathname doesn't contains TIFF extension.")
-            exit()
+            #exit()
     
 
     def load_from(self, pathname):
