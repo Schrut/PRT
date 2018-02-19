@@ -1,0 +1,6 @@
+PyQt5
+numpy
+GDAL
+qimage2ndarray
+opencv-python
+Pillow

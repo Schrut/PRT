@@ -40,9 +40,6 @@ import smopy
 import numpy as np
 import qimage2ndarray as q2a
 
-#test
-
-
 from PyQt5.QtGui import QImage, QPixmap
 
 class Tiff():
@@ -88,7 +85,7 @@ class Tiff():
         self.metadata = gdal.Open(pathname).ReadAsArray() # Convert TIFF to numpy.ndarray
 
         # Les metadatas du TIFF, celles qui nous intéresses ici sont les fameuses GEOTIFF
-        print( gdal.Info(pathname) )
+        # print( gdal.Info(pathname) )
 
         print("Shape ", self.metadata.shape)
         print("Bits ", self.metadata.dtype)

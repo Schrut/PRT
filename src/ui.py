@@ -1,20 +1,18 @@
 from PyQt5.QtWidgets import (
-QMainWindow,
-QMessageBox,
-QScrollArea,
-QWidget,
-QMenuBar,
-QLabel,
-QAction,
-QWidget,
-QFileDialog,
+	QMainWindow,
+	QMessageBox,
+	QScrollArea,
+	QWidget,
+	QMenuBar,
+	QLabel,
+	QAction,
+	QWidget,
+	QFileDialog,
 )
 
-import glob
+#import glob
 import time
 from img import Tiff
-
-tiff = Tiff('../tif/20170407080916_MSG2.tif')
 
 """
 The MIT License (MIT)
@@ -27,22 +25,22 @@ class uiLicenseWindow(QMessageBox):
 			self.title = "The MIT License (MIT)"
 			#Hardcoded License
 			self.license = "<pre><b>Copyright © 2018  <i>~ Thibault HECKEL, Florian GIMENEZ ~</i></b><br><br>\
-	Permission is hereby granted, free of charge, to any person obtaining a copy<br>\
-	of this software and associated documentation files (the “Software”), to deal<br>\
-	in the Software without restriction, including without limitation the rights<br>\
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br>\
-	copies of the Software, and to permit persons to whom the Software is<br>\
-	furnished to do so, subject to the following conditions:<br><br>\
-	The above copyright notice and this permission notice shall be included in all<br>\
-	copies or substantial portions of the Software.<br><br>\
-	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br>\
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br>\
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br>\
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br>\
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br>\
-	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE<br>\
-	SOFTWARE.</pre><br>\
-	Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource.org/licenses/MIT</a>"
+Permission is hereby granted, free of charge, to any person obtaining a copy<br>\
+of this software and associated documentation files (the “Software”), to deal<br>\
+in the Software without restriction, including without limitation the rights<br>\
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br>\
+copies of the Software, and to permit persons to whom the Software is<br>\
+furnished to do so, subject to the following conditions:<br><br>\
+The above copyright notice and this permission notice shall be included in all<br>\
+copies or substantial portions of the Software.<br><br>\
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br>\
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br>\
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br>\
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br>\
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br>\
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE<br>\
+SOFTWARE.</pre><br>\
+Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource.org/licenses/MIT</a>"
 
 	def on_clik(self):
 			self.information(self.window, self.title, self.license, QMessageBox.Ok)
@@ -54,15 +52,31 @@ class uiOpenFile(QFileDialog):
 			self.title = "Open a new file"
 			
 	def on_clik(self):
-			global tiff
-			fileName = QFileDialog.getOpenFileName(self,"Open Image", "/home/", "Image Files (*.tiff *.tif)")
+			fname = QFileDialog.getOpenFileName(self,
+												"Open TIFF image", 
+												"..",
+												"Image Files (*.tiff *.tif)"
+												)[0] # Take only file name
+
+			'''
+			# A mettre certainement dans une autre fonction je pense, du genre "load all dir"
+			# Y'a une fonction QFileDialog.getOpenFileNames <- avec un "s", à voir ce que ça donne 
+			# (https://doc.qt.io/qt-5/qfiledialog.html#getOpenFileNames)
+			# 
+
 			effectiveFileName = fileName[0]
 			indice = 0
 			while effectiveFileName.find("/",indice+1) != -1:
 				indice = effectiveFileName.find("/",indice+1)
 			list_ = glob.glob(effectiveFileName[0:indice+1]+"*.tif")
 			tiff = Tiff( list_[0] )
+			'''
 			
+			tiff = Tiff(fname)
+			img_viewer = QLabel()
+			img_viewer.setPixmap(tiff.to_QPixmap())
+			self.window.setWidget(img_viewer)
+
 
 """
 User Interface Main Window
@@ -81,6 +95,9 @@ class uiMainWindow(QMainWindow):
 			self.setWindowTitle(self.title)
 			self.setGeometry(self.left, self.top, self.width, self.height)
 
+			scroll_area = QScrollArea()
+			self.setCentralWidget(scroll_area)
+
 			# TODO: Add other entries & buttons
 			
 			# Buttons
@@ -94,7 +111,7 @@ class uiMainWindow(QMainWindow):
 			button_open = QAction("Open", self)
 			button_open.setShortcut("Ctrl+O")
 			button_open.setStatusTip("Open an image")
-			button_open.triggered.connect(uiOpenFile(self).on_clik)
+			button_open.triggered.connect(uiOpenFile(scroll_area).on_clik)
 
 			## Show License button
 			button_license = QAction("License", self)
@@ -113,19 +130,5 @@ class uiMainWindow(QMainWindow):
 			## About menu
 			menu_about = menu.addMenu("About")
 			menu_about.addAction(button_license)
-
-			##################################################################
-			#### Loading image, test
-			#tiff = Tiff('../tif/20170407080916_MSG2.tif')
-			#tiff = Tiff('../tif/france_mercator.tif') 
-			
-			
-			img_viewer = QLabel()
-			img_viewer.setPixmap(tiff.to_QPixmap())
-
-			scroll_area = QScrollArea()
-			scroll_area.setWidget(img_viewer)
-
-			self.setCentralWidget(scroll_area)
 			
 

@@ -8,18 +8,11 @@ __Thibault HECKEL__
 __Florian GIMENEZ__
 
 ## Dépendances :
-- [Python](https://docs.python.org/3/)
-- [PyQt5](https://pypi.python.org/pypi/PyQt5)
-- [numpy](https://pypi.python.org/pypi/numpy)
-- [tifffile](https://pypi.python.org/pypi/tifffile)
-- [qimage2ndarray](https://pypi.python.org/pypi/qimage2ndarray)
-- [opencv-python](https://pypi.python.org/pypi/opencv-python)
-- [osmapi](https://pypi.python.org/pypi/osmapi)
-
-## Lancer le programme :
-```bash
-cd /src && python3 main.py
+```
+# pip install -r requirements.txt
 ```
 
-TODO:
-    - Traduire le README
+## Lancer le programme :
+```
+cd /src && python3 main.py
+```
