@@ -5,15 +5,16 @@
 """
 
 import sys
+import time
 from PyQt5.QtWidgets import QApplication
 
 from ui import uiMainWindow
 
 def main():
-    app = QApplication(sys.argv)
-    win = uiMainWindow()
-    win.show()
-    sys.exit(app.exec_())
+		app = QApplication(sys.argv)
+		win = uiMainWindow()
+		win.show()
+		sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    main()
+		main()

@@ -14,7 +14,7 @@ import glob
 import time
 from img import Tiff
 
-fileName = '../tif/20170407080916_MSG2.tif'
+tiff = Tiff('../tif/20170407080916_MSG2.tif')
 
 """
 The MIT License (MIT)
@@ -54,9 +54,15 @@ class uiOpenFile(QFileDialog):
 			self.title = "Open a new file"
 			
 	def on_clik(self):
-			global fileName
-			fileName = QFileDialog.getOpenFileName(self,"Open Image", "/home/", "Image Files (*.png *.tiff *.tif)")
-			fileName = fileName[0]
+			global tiff
+			fileName = QFileDialog.getOpenFileName(self,"Open Image", "/home/", "Image Files (*.tiff *.tif)")
+			effectiveFileName = fileName[0]
+			indice = 0
+			while effectiveFileName.find("/",indice+1) != -1:
+				indice = effectiveFileName.find("/",indice+1)
+			list_ = glob.glob(effectiveFileName[0:indice+1]+"*.tif")
+			tiff = Tiff( list_[0] )
+			
 
 """
 User Interface Main Window
@@ -113,13 +119,7 @@ class uiMainWindow(QMainWindow):
 			#tiff = Tiff('../tif/20170407080916_MSG2.tif')
 			#tiff = Tiff('../tif/france_mercator.tif') 
 			
-			#glob permet de lire tout les fichier tif et de les mettre dans une liste -> utile pour création de séquence
-			#list_ = glob.glob('../tif/*.tif')
-			#tiff = Tiff( list_[0] )
-			global fileName
-
-			tiff = Tiff(fileName)
-
+			
 			img_viewer = QLabel()
 			img_viewer.setPixmap(tiff.to_QPixmap())
 
@@ -127,5 +127,5 @@ class uiMainWindow(QMainWindow):
 			scroll_area.setWidget(img_viewer)
 
 			self.setCentralWidget(scroll_area)
-
+			
 
