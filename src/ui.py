@@ -71,6 +71,8 @@ class uiOpenFile(QFileDialog):
 			list_ = glob.glob(effectiveFileName[0:indice+1]+"*.tif")
 			tiff = Tiff( list_[0] )
 			'''
+			if fname == "": 
+				return
 			
 			tiff = Tiff(fname)
 			img_viewer = QLabel()
