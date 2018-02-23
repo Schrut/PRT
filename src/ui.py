@@ -49,7 +49,7 @@ class uiOpenFile(QFileDialog):
 	def __init__(self, window):
 			super().__init__(window)
 			self.window = window
-			self.title = "Open a new file"
+			self.title = "Open a TIFF image"
 			
 	def on_clik(self):
 			fname = QFileDialog.getOpenFileName(self,
@@ -108,7 +108,7 @@ class uiMainWindow(QMainWindow):
 			button_exit.triggered.connect(self.close)
 
 			## Open-File button
-			button_open = QAction("Open", self)
+			button_open = QAction("Open TIFF", self)
 			button_open.setShortcut("Ctrl+O")
 			button_open.setStatusTip("Open an image")
 			button_open.triggered.connect(uiOpenFile(scroll_area).on_clik)
@@ -125,10 +125,9 @@ class uiMainWindow(QMainWindow):
 			## File menu
 			menu_file = menu.addMenu("File")
 			menu_file.addAction(button_open)
+			menu_file.addSeparator()
 			menu_file.addAction(button_exit)
 
 			## About menu
 			menu_about = menu.addMenu("About")
 			menu_about.addAction(button_license)
-			
-
