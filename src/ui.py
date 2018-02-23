@@ -10,7 +10,10 @@ from PyQt5.QtWidgets import (
 	QFileDialog,
 )
 
-#import glob
+from PyQt5.QtGui import (
+	QWindow,
+)
+
 import time
 from img import Tiff
 
@@ -45,6 +48,11 @@ Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource
 	def on_clik(self):
 			self.information(self.window, self.title, self.license, QMessageBox.Ok)
 
+
+class uiHistogram(QWindow):
+	def __init__(self, image):
+		super().__init__()
+
 class uiOpenFile(QFileDialog):
 	def __init__(self, window):
 			super().__init__(window)
@@ -52,32 +60,19 @@ class uiOpenFile(QFileDialog):
 			self.title = "Open a TIFF image"
 			
 	def on_clik(self):
-			fname = QFileDialog.getOpenFileName(self,
-												"Open TIFF image", 
-												"..",
-												"Image Files (*.tiff *.tif)"
-												)[0] # Take only file name
+			fname = self.getOpenFileName(self.window,
+										"Open TIFF image", 
+										"..",
+										"Image Files (*.tiff *.tif)"
+										)[0] # Take only file name
 
-			'''
-			# A mettre certainement dans une autre fonction je pense, du genre "load all dir"
-			# Y'a une fonction QFileDialog.getOpenFileNames <- avec un "s", à voir ce que ça donne 
-			# (https://doc.qt.io/qt-5/qfiledialog.html#getOpenFileNames)
-			# 
-
-			effectiveFileName = fileName[0]
-			indice = 0
-			while effectiveFileName.find("/",indice+1) != -1:
-				indice = effectiveFileName.find("/",indice+1)
-			list_ = glob.glob(effectiveFileName[0:indice+1]+"*.tif")
-			tiff = Tiff( list_[0] )
-			'''
 			if fname == "": 
 				return
 			
 			tiff = Tiff(fname)
 			img_viewer = QLabel()
 			img_viewer.setPixmap(tiff.to_QPixmap())
-			self.window.setWidget(img_viewer)
+			self.window.centralWidget().setWidget(img_viewer)
 
 
 """
@@ -87,7 +82,7 @@ class uiMainWindow(QMainWindow):
 	def __init__(self):
 			super().__init__()
 			self.title = "PRT"
-			self.left = 200
+			self.left = 400
 			self.top = 200
 			self.width = 1080
 			self.height = 720
@@ -113,7 +108,7 @@ class uiMainWindow(QMainWindow):
 			button_open = QAction("Open TIFF", self)
 			button_open.setShortcut("Ctrl+O")
 			button_open.setStatusTip("Open an image")
-			button_open.triggered.connect(uiOpenFile(scroll_area).on_clik)
+			button_open.triggered.connect(uiOpenFile(self).on_clik)
 
 			## Show License button
 			button_license = QAction("License", self)
@@ -129,6 +124,9 @@ class uiMainWindow(QMainWindow):
 			menu_file.addAction(button_open)
 			menu_file.addSeparator()
 			menu_file.addAction(button_exit)
+
+			## Process menu
+			menu_process = menu.addMenu("Process")
 
 			## About menu
 			menu_about = menu.addMenu("About")
