@@ -10,11 +10,15 @@ from PyQt5.QtWidgets import (
 	QFileDialog,
 )
 
-from PyQt5.QtGui import (
-	QWindow,
+from PyQt5.QtCore import Qt
+
+import matplotlib.pyplot as plt
+import matplotlib.figure as Figure
+from matplotlib.backends.backend_qt5agg import (
+	FigureCanvasQTAgg as FigureCanvas,
+    NavigationToolbar2QT as NavigationToolbar
 )
 
-import time
 from img import Tiff
 
 """
@@ -22,9 +26,9 @@ The MIT License (MIT)
 https://mit-license.org/
 """
 class uiLicenseWindow(QMessageBox):
-	def __init__(self, window):
-			super().__init__(window)
-			self.window = window
+	def __init__(self, parent):
+			super().__init__(parent)
+			self.parent = parent
 			self.title = "The MIT License (MIT)"
 			#Hardcoded License
 			self.license = "<pre><b>Copyright © 2018  <i>~ Thibault HECKEL, Florian GIMENEZ ~</i></b><br><br>\
@@ -46,21 +50,57 @@ SOFTWARE.</pre><br>\
 Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource.org/licenses/MIT</a>"
 
 	def on_clik(self):
-			self.information(self.window, self.title, self.license, QMessageBox.Ok)
+			self.information(self.parent, self.title, self.license, QMessageBox.Ok)
 
 
-class uiHistogram(QWindow):
-	def __init__(self, image):
-		super().__init__()
+class uiHistogram(QWidget):
+	def __init__(self, parent=None):
+		super().__init__(parent)
+		self.parent = parent
+	
+	def on_clik(self):
+		try:
+			'''
+			Ici la question:
+				est-ce que l'on calcul l'histogramme de l'image TIFF originale (range pouvant aller au-delà de [0-255]),
+				ou sur l'image après normalisation sur [0-255] (celle qui est affichée à l'écran)
+
+				pour le moment, celui de l'image originale
+			'''
+			img = self.parent.cimg.metadata.ravel() # `ravel()` function: 2D -> 1D array
+			plt.hist(img) 
+
+			## Essayer de virer toutes les infos / bouttons dont on ne veut pas à l'affichage
+			## Rendre plus aesthetic le graph
+			## Possiblité de faire l'histograme avec opencv aussi apparemment (au cas où)
+
+			'''
+			Le problème ici:
+				si show est mit à True ici (fonctionnement par défaut), le plot est "dynamique"
+				Ce qui block le fonctionnement de la fenêtre principale :/
+				En le mettant à False, le plot est static
+
+				Retourne une Figure
+			'''
+			fig = plt.show(False)
+			#canvas = FigureCanvas(fig)
+			#self.setCentralWidget(canvas)
+			self.setWindowTitle("Histogram")
+
+		except Exception as e:
+			print(e)
+			# TODO: afficher un message d'erreur
+			# comme quoi aucune image est sélectionnée
+		
 
 class uiOpenFile(QFileDialog):
-	def __init__(self, window):
-			super().__init__(window)
-			self.window = window
-			self.title = "Open a TIFF image"
+	def __init__(self, parent=None):
+			super().__init__(parent)
+			self.parent = parent
 			
 	def on_clik(self):
-			fname = self.getOpenFileName(self.window,
+			self.title = "Open a TIFF image"
+			fname = self.getOpenFileName(self.parent,
 										"Open TIFF image", 
 										"..",
 										"Image Files (*.tiff *.tif)"
@@ -72,13 +112,16 @@ class uiOpenFile(QFileDialog):
 			tiff = Tiff(fname)
 			img_viewer = QLabel()
 			img_viewer.setPixmap(tiff.to_QPixmap())
-			self.window.centralWidget().setWidget(img_viewer)
+			self.parent.centralWidget().setWidget(img_viewer)
+			self.parent.cimg = tiff # Change current image
 
 
 """
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
+	cimg = None # Current image display into MainWindow
+
 	def __init__(self, screen):
 			super().__init__()
 			self.title = "PRT"
@@ -115,6 +158,11 @@ class uiMainWindow(QMainWindow):
 			button_license.setStatusTip("Application's license")
 			button_license.triggered.connect(uiLicenseWindow(self).on_clik)
 
+			## Process Histogram button
+			button_process_hist = QAction("Histogram", self)
+			button_process_hist.setStatusTip("Calcul histogram")
+			button_process_hist.triggered.connect(uiHistogram(self).on_clik)
+
 			# Menus
 			# Main menu
 			menu = self.menuBar()
@@ -127,6 +175,7 @@ class uiMainWindow(QMainWindow):
 
 			## Process menu
 			menu_process = menu.addMenu("Process")
+			menu_process.addAction(button_process_hist)
 
 			## About menu
 			menu_about = menu.addMenu("About")
