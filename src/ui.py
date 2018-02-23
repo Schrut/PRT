@@ -79,13 +79,13 @@ class uiOpenFile(QFileDialog):
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	def __init__(self):
+	def __init__(self, screen):
 			super().__init__()
 			self.title = "PRT"
-			self.left = 400
-			self.top = 200
 			self.width = 1080
 			self.height = 720
+			self.left = (screen.size().width() - self.width) / 2
+			self.top = (screen.size().height() - self.height) / 2
 			self.build()
 
 	def build(self):

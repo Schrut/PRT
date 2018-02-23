@@ -34,7 +34,6 @@ TO READ:
 """
 
 import os
-import ogr
 import gdal
 import smopy
 import numpy as np
@@ -58,15 +57,13 @@ class Tiff():
         """
         if pathname.endswith(('.tiff', 'tif')):
             if self.load_from(pathname) == False:
-                print("Error while reading: image doesn't exists.")
-                #exit()
+                print("[FAILED]\nError while reading: image doesn't exists.")
             else:
                 self.name = os.path.basename(pathname)
                 self.pname = pathname
-                print("Done.")
+                print("[OK]")
         else:
-            print("pathname doesn't contains TIFF extension.")
-            #exit()
+            print("[FAILED]\npathname doesn't contains TIFF extension.")
     
 
     def load_from(self, pathname):
@@ -78,7 +75,7 @@ class Tiff():
         Returns:
             boolean -- True if image found.
         """
-        print("Loading '"+pathname+"' image.")
+        print("Loading image '"+pathname+"' -> ", end="")
         if not os.path.exists(pathname):
             return False
         
@@ -87,8 +84,6 @@ class Tiff():
         # Les metadatas du TIFF, celles qui nous intéresses ici sont les fameuses GEOTIFF
         # print( gdal.Info(pathname) )
 
-        print("Shape ", self.metadata.shape)
-        print("Bits ", self.metadata.dtype)
         return True
 
 

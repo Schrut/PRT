@@ -12,7 +12,7 @@ from ui import uiMainWindow
 
 def main():
 		app = QApplication(sys.argv)
-		win = uiMainWindow()
+		win = uiMainWindow(app.primaryScreen())
 		win.show()
 		sys.exit(app.exec_())
 

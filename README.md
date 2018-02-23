@@ -8,6 +8,10 @@ __Thibault HECKEL__
 __Florian GIMENEZ__
 
 ## Dépendances :
+
+- [PyQt5](https://www.riverbankcomputing.com/software/pyqt/download5)
+- [GDAL](https://trac.osgeo.org/gdal/)
+
 ```
 # pip install -r requirements.txt
 ```
