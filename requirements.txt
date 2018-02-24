@@ -1,3 +1,4 @@
+pyqtchart
 numpy
 GDAL
 qimage2ndarray

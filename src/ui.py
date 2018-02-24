@@ -10,15 +10,18 @@ from PyQt5.QtWidgets import (
 	QFileDialog,
 )
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter
 
-import matplotlib.pyplot as plt
-import matplotlib.figure as Figure
-from matplotlib.backends.backend_qt5agg import (
-	FigureCanvasQTAgg as FigureCanvas,
-    NavigationToolbar2QT as NavigationToolbar
+from PyQt5.QtChart import (
+	QChart,
+	QChartView,
+	QBarSet,
+	QBarSeries,
+	QBarCategoryAxis,
 )
 
+from PyQt5.QtCore import Qt
+import numpy as np
 from img import Tiff
 
 """
@@ -53,50 +56,66 @@ Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource
 			self.information(self.parent, self.title, self.license, QMessageBox.Ok)
 
 
-class uiHistogram(QWidget):
-	def __init__(self, parent=None):
+class uiHistogram(QMainWindow):
+	def __init__(self, parent):
 		super().__init__(parent)
 		self.parent = parent
+		self.setFixedSize(600, 400) # Min size
+		self.visible = False # Don't draw hist
+
+		'''
+		https://doc.qt.io/qt-5/qtcharts-barchart-example.html
+		'''
+
+	def closeEvent(self, event):
+		self.visible = False
 	
 	def on_clik(self):
+		self.visible = True
 		try:
-			'''
-			Ici la question:
-				est-ce que l'on calcul l'histogramme de l'image TIFF originale (range pouvant aller au-delà de [0-255]),
-				ou sur l'image après normalisation sur [0-255] (celle qui est affichée à l'écran)
+			self.img = self.parent.cimg.metadata.ravel()
+			hist, bin_edges = np.histogram( self.img, bins='auto' )
 
-				pour le moment, celui de l'image originale
-			'''
-			img = self.parent.cimg.metadata.ravel() # `ravel()` function: 2D -> 1D array
-			plt.hist(img) 
+			bar = QBarSet("Histogram")
+			for x in np.nditer( hist ):
+				bar.append( x )
+			
+			bar.setColor(Qt.blue)
+			pen = bar.pen()
+			pen.setWidth(0.05)
+			bar.setPen(pen)
 
-			## Essayer de virer toutes les infos / bouttons dont on ne veut pas à l'affichage
-			## Rendre plus aesthetic le graph
-			## Possiblité de faire l'histograme avec opencv aussi apparemment (au cas où)
+			series = QBarSeries()
+			series.append(bar)
 
-			'''
-			Le problème ici:
-				si show est mit à True ici (fonctionnement par défaut), le plot est "dynamique"
-				Ce qui block le fonctionnement de la fenêtre principale :/
-				En le mettant à False, le plot est static
+			#axis = QBarCategoryAxis();
+			#axis.append(str(bin_edges[-1])) ## Récupère la dernière valeur
 
-				Retourne une Figure
-			'''
-			fig = plt.show(False)
-			#canvas = FigureCanvas(fig)
-			#self.setCentralWidget(canvas)
-			self.setWindowTitle("Histogram")
+			chart = QChart()
+			chart.setTitle("Histogram")
+			chart.addSeries(series)
+			chart.setAnimationOptions(QChart.SeriesAnimations)
+			chart.createDefaultAxes()
+
+			#chart.setAxisX(axis, series)
+
+			chart.legend().setVisible(False)
+			#chart.legend().setAlignment(Qt.AlignBottom)
+			view = QChartView(chart)
+			view.setRenderHint(QPainter.Antialiasing)
+
+			self.setCentralWidget(view)
+			self.show()
 
 		except Exception as e:
 			print(e)
-			# TODO: afficher un message d'erreur
-			# comme quoi aucune image est sélectionnée
 		
 
 class uiOpenFile(QFileDialog):
-	def __init__(self, parent=None):
+	def __init__(self, parent, histo=None):
 			super().__init__(parent)
 			self.parent = parent
+			self.histo = histo
 			
 	def on_clik(self):
 			self.title = "Open a TIFF image"
@@ -114,6 +133,8 @@ class uiOpenFile(QFileDialog):
 			img_viewer.setPixmap(tiff.to_QPixmap())
 			self.parent.centralWidget().setWidget(img_viewer)
 			self.parent.cimg = tiff # Change current image
+			if self.histo is not None and self.histo.visible == True:
+				self.histo.on_clik()
 
 
 """
@@ -132,6 +153,9 @@ class uiMainWindow(QMainWindow):
 			self.build()
 
 	def build(self):
+			#Test purpose
+			self.cimg = Tiff("../tif/20170407054917_MSG2.tif")
+
 			self.setWindowTitle(self.title)
 			self.setGeometry(self.left, self.top, self.width, self.height)
 
@@ -139,6 +163,9 @@ class uiMainWindow(QMainWindow):
 			self.setCentralWidget(scroll_area)
 
 			# TODO: Add other entries & buttons
+			ui_license = uiLicenseWindow(self)
+			ui_histogram = uiHistogram(self)
+			ui_openfile = uiOpenFile(self, ui_histogram)
 			
 			# Buttons
 			## Exit button
@@ -151,17 +178,17 @@ class uiMainWindow(QMainWindow):
 			button_open = QAction("Open TIFF", self)
 			button_open.setShortcut("Ctrl+O")
 			button_open.setStatusTip("Open an image")
-			button_open.triggered.connect(uiOpenFile(self).on_clik)
+			button_open.triggered.connect(ui_openfile.on_clik)
 
 			## Show License button
 			button_license = QAction("License", self)
 			button_license.setStatusTip("Application's license")
-			button_license.triggered.connect(uiLicenseWindow(self).on_clik)
+			button_license.triggered.connect(ui_license.on_clik)
 
 			## Process Histogram button
 			button_process_hist = QAction("Histogram", self)
 			button_process_hist.setStatusTip("Calcul histogram")
-			button_process_hist.triggered.connect(uiHistogram(self).on_clik)
+			button_process_hist.triggered.connect(ui_histogram.on_clik)
 
 			# Menus
 			# Main menu
