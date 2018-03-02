@@ -56,6 +56,13 @@ Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource
 			self.information(self.parent, self.title, self.license, QMessageBox.Ok)
 
 
+class uiGdal(QMainWindow):
+	def __init__(self, parent):
+		super().__init__(parent)
+		self.parent = parent
+		self.setFixedSize(600, 400) # Min size
+		self.visible = False # Don't draw hist
+
 class uiHistogram(QMainWindow):
 	def __init__(self, parent):
 		super().__init__(parent)
@@ -189,6 +196,11 @@ class uiMainWindow(QMainWindow):
 			button_process_hist = QAction("Histogram", self)
 			button_process_hist.setStatusTip("Calcul histogram")
 			button_process_hist.triggered.connect(ui_histogram.on_clik)
+
+			## Process Gdal button
+			button_process_gdal = QAction("Gdal", self)
+			button_process_gdal.setStatusTip("Gdal - Geoloc")
+			button_process_gdal.triggered.connect(uiGdal.on_clik)
 
 			# Menus
 			# Main menu
