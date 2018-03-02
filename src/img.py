@@ -34,8 +34,8 @@ TO READ:
 """
 
 import os
-import gdal
 import smopy
+from osgeo import gdal
 import numpy as np
 import qimage2ndarray as q2a
 

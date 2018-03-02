@@ -1,0 +1,23 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Histograms>
+      <HistItem>
+        <HistMin>52.50333333333333</HistMin>
+        <HistMax>202.4966666666667</HistMax>
+        <BucketCount>150</BucketCount>
+        <IncludeOutOfRange>0</IncludeOutOfRange>
+        <Approximate>1</Approximate>
+        <HistCounts>86|650|1777|2399|2371|1997|1833|1642|1452|1708|2228|2650|2633|2136|1910|2043|2139|1884|1919|1749|1721|1415|1393|1189|1068|814|616|511|433|285|191|154|136|121|111|116|103|95|74|92|120|99|76|61|63|66|69|49|62|46|67|99|94|115|97|78|94|72|81|56|46|39|12|18|18|12|8|16|10|10|11|7|11|12|9|14|5|11|8|2|9|3|6|10|3|8|6|5|5|4|7|5|1|6|3|7|3|2|4|2|5|3|0|0|1|1|1|0|1|0|1|4|1|1|0|1|1|0|1|0|0|0|0|1|1|1|0|1|0|0|0|0|0|0|1|0|0|0|1|0|0|1|0|0|0|0|0|0|0|1</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">202</MDI>
+      <MDI key="STATISTICS_MEAN">68.041091215674</MDI>
+      <MDI key="STATISTICS_MINIMUM">53</MDI>
+      <MDI key="STATISTICS_STDDEV">11.391063207044</MDI>
+      <MDI key="U-MARF_MSG_Level1.5_DATA_Channel_12_IMAGE_DATA_CLASS">IMAGE</MDI>
+      <MDI key="U-MARF_MSG_Level1.5_DATA_Channel_12_IMAGE_DATA_IMAGE_SUBCLASS">IMAGE_U16BIT</MDI>
+      <MDI key="U-MARF_MSG_Level1.5_DATA_Channel_12_IMAGE_DATA_IMAGE_VERSION">1.2</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

@@ -10,16 +10,6 @@ from PyQt5.QtWidgets import (
 	QFileDialog,
 )
 
-from PyQt5.QtGui import QPainter
-
-from PyQt5.QtChart import (
-	QChart,
-	QChartView,
-	QBarSet,
-	QBarSeries,
-	QBarCategoryAxis,
-)
-
 from PyQt5.QtCore import Qt
 import numpy as np
 from img import Tiff
@@ -52,15 +42,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE<br
 SOFTWARE.</pre><br>\
 Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource.org/licenses/MIT</a>"
 
-	def on_clik(self):
+	def on_click(self):
 			self.information(self.parent, self.title, self.license, QMessageBox.Ok)
+
+
+class uiGdal(QMainWindow):
+	def __init__(self, parent):
+		super().__init__(parent)
+		self.parent = parent
+		
+	
+	def on_click(self):
+		self.setWindowTitle("GDAL TEST")
+		self.setFixedSize(600, 400)
+		self.show()
+		
 
 class uiOpenFile(QFileDialog):
 	def __init__(self, parent):
 			super().__init__(parent)
 			self.parent = parent
 			
-	def on_clik(self):
+	def on_click(self):
 			self.title = "Open a TIFF image"
 			fname = self.getOpenFileName(self.parent,
 										"Open TIFF image", 
@@ -114,12 +117,17 @@ class uiMainWindow(QMainWindow):
 			button_open = QAction("Open TIFF", self)
 			button_open.setShortcut("Ctrl+O")
 			button_open.setStatusTip("Open an image")
-			button_open.triggered.connect(uiOpenFile(self).on_clik)
+			button_open.triggered.connect(uiOpenFile(self).on_click)
 
 			## Show License button
 			button_license = QAction("License", self)
 			button_license.setStatusTip("Application's license")
-			button_license.triggered.connect(uiLicenseWindow(self).on_clik)
+			button_license.triggered.connect(uiLicenseWindow(self).on_click)
+
+			## Process Gdal button
+			button_process_gdal = QAction("Gdal", self)
+			button_process_gdal.setStatusTip("Gdal - Geoloc")
+			button_process_gdal.triggered.connect(uiGdal(self).on_click)
 
 			# Menus
 			# Main menu
@@ -133,6 +141,7 @@ class uiMainWindow(QMainWindow):
 
 			## Process menu
 			menu_process = menu.addMenu("Process")
+			menu_process.addAction(button_process_gdal)
 
 			## About menu
 			menu_about = menu.addMenu("About")
