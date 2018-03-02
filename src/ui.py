@@ -55,67 +55,10 @@ Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource
 	def on_clik(self):
 			self.information(self.parent, self.title, self.license, QMessageBox.Ok)
 
-
-class uiHistogram(QMainWindow):
-	def __init__(self, parent):
-		super().__init__(parent)
-		self.parent = parent
-		self.setFixedSize(600, 400) # Min size
-		self.visible = False # Don't draw hist
-
-		'''
-		https://doc.qt.io/qt-5/qtcharts-barchart-example.html
-		'''
-
-	def closeEvent(self, event):
-		self.visible = False
-	
-	def on_clik(self):
-		self.visible = True
-		try:
-			self.img = self.parent.cimg.metadata.ravel()
-			hist, bin_edges = np.histogram( self.img, bins='auto' )
-
-			bar = QBarSet("Histogram")
-			for x in np.nditer( hist ):
-				bar.append( x )
-			
-			bar.setColor(Qt.blue)
-			pen = bar.pen()
-			pen.setWidth(0.05)
-			bar.setPen(pen)
-
-			series = QBarSeries()
-			series.append(bar)
-
-			#axis = QBarCategoryAxis();
-			#axis.append(str(bin_edges[-1])) ## Récupère la dernière valeur
-
-			chart = QChart()
-			chart.setTitle("Histogram")
-			chart.addSeries(series)
-			chart.setAnimationOptions(QChart.SeriesAnimations)
-			chart.createDefaultAxes()
-
-			#chart.setAxisX(axis, series)
-
-			chart.legend().setVisible(False)
-			#chart.legend().setAlignment(Qt.AlignBottom)
-			view = QChartView(chart)
-			view.setRenderHint(QPainter.Antialiasing)
-
-			self.setCentralWidget(view)
-			self.show()
-
-		except Exception as e:
-			print(e)
-		
-
 class uiOpenFile(QFileDialog):
-	def __init__(self, parent, histo=None):
+	def __init__(self, parent):
 			super().__init__(parent)
 			self.parent = parent
-			self.histo = histo
 			
 	def on_clik(self):
 			self.title = "Open a TIFF image"
@@ -133,8 +76,6 @@ class uiOpenFile(QFileDialog):
 			img_viewer.setPixmap(tiff.to_QPixmap())
 			self.parent.centralWidget().setWidget(img_viewer)
 			self.parent.cimg = tiff # Change current image
-			if self.histo is not None and self.histo.visible == True:
-				self.histo.on_clik()
 
 
 """
@@ -162,11 +103,6 @@ class uiMainWindow(QMainWindow):
 			scroll_area = QScrollArea()
 			self.setCentralWidget(scroll_area)
 
-			# TODO: Add other entries & buttons
-			ui_license = uiLicenseWindow(self)
-			ui_histogram = uiHistogram(self)
-			ui_openfile = uiOpenFile(self, ui_histogram)
-			
 			# Buttons
 			## Exit button
 			button_exit = QAction("Exit", self)
@@ -178,17 +114,12 @@ class uiMainWindow(QMainWindow):
 			button_open = QAction("Open TIFF", self)
 			button_open.setShortcut("Ctrl+O")
 			button_open.setStatusTip("Open an image")
-			button_open.triggered.connect(ui_openfile.on_clik)
+			button_open.triggered.connect(uiOpenFile(self).on_clik)
 
 			## Show License button
 			button_license = QAction("License", self)
 			button_license.setStatusTip("Application's license")
-			button_license.triggered.connect(ui_license.on_clik)
-
-			## Process Histogram button
-			button_process_hist = QAction("Histogram", self)
-			button_process_hist.setStatusTip("Calcul histogram")
-			button_process_hist.triggered.connect(ui_histogram.on_clik)
+			button_license.triggered.connect(uiLicenseWindow(self).on_clik)
 
 			# Menus
 			# Main menu
@@ -202,7 +133,6 @@ class uiMainWindow(QMainWindow):
 
 			## Process menu
 			menu_process = menu.addMenu("Process")
-			menu_process.addAction(button_process_hist)
 
 			## About menu
 			menu_about = menu.addMenu("About")
