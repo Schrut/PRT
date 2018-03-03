@@ -10,7 +10,9 @@ from PyQt5.QtWidgets import (
 	QFileDialog,
 )
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter
+from PyQt5.QtCore import Qt, QRectF
+
 import numpy as np
 from img import Tiff
 
@@ -75,11 +77,8 @@ class uiOpenFile(QFileDialog):
 				return
 			
 			tiff = Tiff(fname)
-			img_viewer = QLabel()
-			img_viewer.setPixmap(tiff.to_QPixmap())
-			self.parent.centralWidget().setWidget(img_viewer)
-			self.parent.cimg = tiff # Change current image
-
+			tiff.draw_In(self.parent.centralWidget())
+			self.parent.set_cimg(tiff)
 
 """
 User Interface Main Window
@@ -95,6 +94,9 @@ class uiMainWindow(QMainWindow):
 			self.left = (screen.size().width() - self.width) / 2
 			self.top = (screen.size().height() - self.height) / 2
 			self.build()
+
+	def set_cimg(self, tiff):
+		self.cimg = tiff
 
 	def build(self):
 			#Test purpose

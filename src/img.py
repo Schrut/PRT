@@ -39,6 +39,7 @@ from osgeo import gdal
 import numpy as np
 import qimage2ndarray as q2a
 
+from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QImage, QPixmap
 
 class Tiff():
@@ -112,3 +113,14 @@ class Tiff():
             QPixmap -- https://doc.qt.io/qt-5/qpixmap.html
         """
         return QPixmap.fromImage(self.to_QImage())
+
+    def draw_In(self, wp):
+        """Draw tiff image (QPixmap here) into a widget.
+
+        Arguments:
+            wp {QWidget} -- the widget in which you want do draw tiff into.
+
+        """
+        img_viewer = QLabel()
+        img_viewer.setPixmap(self.to_QPixmap())
+        wp.setWidget(img_viewer)
