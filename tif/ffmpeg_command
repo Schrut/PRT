@@ -1,0 +1,1 @@
+ffmpeg -pattern_type glob -i "*.tif" output.mp4

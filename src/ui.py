@@ -1,13 +1,15 @@
+"""
+PyQt5 QtWidgets
+"""
 from PyQt5.QtWidgets import (
-	QMainWindow,
-	QMessageBox,
-	QScrollArea,
-	QWidget,
-	QMenuBar,
-	QLabel,
-	QAction,
-	QWidget,
-	QFileDialog,
+    QMainWindow,
+    QMessageBox,
+    QScrollArea,
+    QWidget,
+    QMenuBar,
+    QLabel,
+    QAction,
+    QFileDialog,
 )
 
 from PyQt5.QtGui import QPainter
@@ -16,17 +18,17 @@ from PyQt5.QtCore import Qt, QRectF
 import numpy as np
 from img import Tiff
 
-"""
-The MIT License (MIT)
-https://mit-license.org/
-"""
 class uiLicenseWindow(QMessageBox):
+	"""
+	The MIT License (MIT)
+	https://mit-license.org/
+	"""
 	def __init__(self, parent):
-			super().__init__(parent)
-			self.parent = parent
-			self.title = "The MIT License (MIT)"
-			#Hardcoded License
-			self.license = "<pre><b>Copyright © 2018  <i>~ Thibault HECKEL, Florian GIMENEZ ~</i></b><br><br>\
+		super().__init__(parent)
+		self.parent = parent
+		self.title = "The MIT License (MIT)"
+		#Hardcoded License
+		self.license = "<pre><b>Copyright © 2018  <i>~ Thibault HECKEL, Florian GIMENEZ ~</i></b><br><br>\
 Permission is hereby granted, free of charge, to any person obtaining a copy<br>\
 of this software and associated documentation files (the “Software”), to deal<br>\
 in the Software without restriction, including without limitation the rights<br>\
@@ -42,10 +44,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br>\
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br>\
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE<br>\
 SOFTWARE.</pre><br>\
-Read more at: <a href=\"https://opensource.org/licenses/MIT\">https://opensource.org/licenses/MIT</a>"
+Read more at: <a href=\"https://opensource.org/licenses/MIT\">\
+https://opensource.org/licenses/MIT</a>"
 
 	def on_click(self):
-			self.information(self.parent, self.title, self.license, QMessageBox.Ok)
+		self.information(self.parent, self.title, self.license, QMessageBox.Ok)
 
 
 class uiGdal(QMainWindow):

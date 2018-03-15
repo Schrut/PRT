@@ -1,4 +1,3 @@
 numpy
 GDAL
-qimage2ndarray
 opencv-python
