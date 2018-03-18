@@ -138,6 +138,9 @@ class uiOpenfFiles(QFileDialog):
 								False
 							)
 		
+		# If the VideoWriter creation failed, exit.
+		# e.g.:
+		# HFYU codec is not present at runtime on the machine.
 		if video.isOpened() is False:
 			print("Video [FAILED]")
 			return
