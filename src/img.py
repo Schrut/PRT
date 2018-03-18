@@ -56,7 +56,7 @@ class Tiff():
 
     name = ""
     pname = ""
-    metadata = None
+    source = None
     img = None
 
     def __init__(self, pathname):
@@ -75,7 +75,6 @@ class Tiff():
         else:
             print("[FAILED]\npathname doesn't contains TIFF extension.")
 
-
     def load_from(self, pathname):
         """Load a TIFF image in memory.
 
@@ -93,11 +92,13 @@ class Tiff():
         self.source = gdal.Open(pathname).ReadAsArray()
 
 
-        # Les metadatas du TIFF, celles qui nous intéresses ici sont les fameuses GEOTIFF
+        # Les sources du TIFF, celles qui nous intéresses ici sont les fameuses GEOTIFF
         # print( gdal.Info(pathname) )
 
         return True
 
+    def shape(self):
+        return self.source.shape
 
     def to_8bits(self):
         """Convert the `self.source` field (numpy.ndarray),
@@ -119,7 +120,7 @@ class Tiff():
 
 
     def to_QImage(self):
-        """Convert the `self.metadata` field (numpy.ndarray) to a QImage
+        """Convert the `self.source` field (numpy.ndarray) to a QImage
 
         Returns:
             QImage -- https://doc.qt.io/qt-5/qimage.html
