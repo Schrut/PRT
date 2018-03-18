@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPainter
 from PyQt5.QtCore import Qt, QRectF
 
+import os
 import numpy as np
 import cv2
 from img import Tiff
@@ -118,6 +119,11 @@ class uiOpenfFiles(QFileDialog):
 		# must has the same shape (width/height).
 		tiff = Tiff(fnames[0])
 		_h, _w = tiff.shape()
+		
+		# Path security check
+		videopath = "../video/"
+		if os.path.exists(videopath) is False:
+			os.makedirs(videopath)
 
 		# Create a VideoWirter:
 		# output format .MKV
@@ -125,7 +131,7 @@ class uiOpenfFiles(QFileDialog):
 		# 25 frames/sec
 		# Size( width, height )
 		# False -> not a color video (only grey images here)
-		video = cv2.VideoWriter("../video/video.mkv", 
+		video = cv2.VideoWriter(videopath+"video.mkv", 
 								cv2.VideoWriter_fourcc('H','F','Y','U'), 
 								25.0, 
 								(_w, _h), 
