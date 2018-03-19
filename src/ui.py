@@ -3,17 +3,33 @@ PyQt5 QtWidgets
 """
 from PyQt5.QtWidgets import (
     QMainWindow,
+    QFileDialog,
     QMessageBox,
     QScrollArea,
-    QWidget,
     QMenuBar,
-    QLabel,
+    QWidget,
     QAction,
-    QFileDialog,
+    QLabel,
 )
 
-from PyQt5.QtGui import QPainter
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtGui import (
+    QPainter,
+    QColor,
+    QPen,
+)
+
+from PyQt5.QtCore import (
+    QRectF,
+    Qt,
+)
+
+"""
+https://pypi.python.org/pypi/PythonQwt
+"""
+from qwt import (
+    QwtPlotCurve,
+    QwtPlot,
+)
 
 import os
 import numpy as np
@@ -84,6 +100,52 @@ class uiOpenFile(QFileDialog):
 			tiff = Tiff(fname)
 			tiff.draw_In(self.parent.centralWidget())
 			self.parent.set_cimg(tiff)
+
+class uiHisto(QWidget):
+	def __init__(self, parent):
+		super().__init__(parent)
+		self.parent = parent
+
+	def on_click(self):
+		
+		# Pour le moment, on passe
+		# TODO: Afficher une fenêtre avec message d'erreur
+		# Encore plus tard, griser le bouton quand il n'y a pas d'image load
+		# Possibilité de calculer l'histogram de l'image source (16-Bits) & image normalisée sur 8-bits ???
+		if self.parent.cimg is None:
+			return
+
+		
+		"""
+		TODO:
+			read documentation about numpy histogram compute:
+				https://docs.scipy.org/doc/numpy/reference/generated/numpy.histogram.html
+
+			about Qwt:
+				https://pypi.python.org/pypi/PythonQwt
+		"""
+		# Compute histogram with source image
+		## hist = np.histogram(a=self.parent.cimg.source, bins=range(pow(2,16)))[0]
+
+		# With 8bits normalized image
+		hist = np.histogram(a=self.parent.cimg.to_8bits(), bins=range(256))[0]
+
+		# Build the histogram plot
+		histo_plot = QwtPlot("Histogram")
+
+		# Creates a curve and insert values
+		curve = QwtPlotCurve("Values")
+		curve.setSamples(hist)
+		
+		# Style
+		curve_color = QColor(0, 0, 255)
+		curve.setPen(QPen(curve_color))
+		curve.setBrush(curve_color)
+
+		# Attach curve to histogram plot, then draw.
+		curve.attach(histo_plot)
+		histo_plot.setMinimumSize(480, 320)
+		histo_plot.show()
 
 class uiOpenfFiles(QFileDialog):
 	"""
@@ -214,6 +276,9 @@ class uiMainWindow(QMainWindow):
 			button_process_gdal.setStatusTip("Gdal - Geoloc")
 			button_process_gdal.triggered.connect(uiGdal(self).on_click)
 
+			button_process_histo = QAction("Histogram", self)
+			button_process_histo.triggered.connect(uiHisto(self).on_click)
+
 			# Menus
 			# Main menu
 			menu = self.menuBar()
@@ -228,6 +293,7 @@ class uiMainWindow(QMainWindow):
 			## Process menu
 			menu_process = menu.addMenu("Process")
 			menu_process.addAction(button_process_gdal)
+			menu_process.addAction(button_process_histo)
 
 			## About menu
 			menu_about = menu.addMenu("About")

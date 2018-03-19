@@ -97,6 +97,9 @@ class Tiff():
 
         return True
 
+    def size(self):
+        return self.source.size
+
     def shape(self):
         return self.source.shape
 
