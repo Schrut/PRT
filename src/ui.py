@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QMessageBox,
     QScrollArea,
+	QPushButton,
     QMenuBar,
     QWidget,
     QAction,
@@ -78,7 +79,12 @@ class uiGdal(QMainWindow):
 	def on_click(self):
 		self.setWindowTitle("GDAL TEST")
 		self.setFixedSize(600, 400)
+		self.button = QPushButton('TEST',self)
+		self.button.clicked.connect(self.handleButton)
 		self.show()
+
+	def handleButton(self):
+		print("Hello ?")
 		
 
 class uiOpenFile(QFileDialog):
