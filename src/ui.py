@@ -85,18 +85,36 @@ class uiGdal(QMainWindow):
 		self.button_translate_geos = QPushButton('Translate - GEOS',self)
 		self.button_translate_geos.move(10, 20)
 		self.button_translate_geos.clicked.connect(self.handleButton_TG)
+		
+		#Button for a gdal_warp in a geos proj
+		self.button_warp_geos = QPushButton('Warp - Mercator',self)
+		self.button_warp_geos.move(10, 100)
+		self.button_warp_geos.clicked.connect(self.handleButton_WG)
 		self.show()
+
+	def handleButton_WG(self):
+		pathname_in = self.parent.cimg.pname
+		pathname_out = os.path.basename(pathname_in)
+		pathname_out = '../GDAL/Warp/' + pathname_out[:-4] + '_mercator_warp.tif'
+		if os.path.exists('../GDAL/Warp/') is False:
+			os.makedirs('../GDAL/Warp/')
+		os.system('gdalwarp -ts 1916, 1140 -s_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0 +ulx=-1025637.42 +uly=4614118.21 +lrx=-67509.04 +lry=4044041.83" -t_srs  "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" ' + pathname_in + ' ' + pathname_out)
+		tiff = Tiff(pathname_out)
+		tiff.draw_In(self.parent.centralWidget())
+		self.close()
 
 	def handleButton_TG(self):
 		pathname_in = self.parent.cimg.pname
 		pathname_out = os.path.basename(pathname_in)
-		pathname_out = '../GDAL/' + pathname_out[:-5] + 'geos_traslate.tif'
-		if os.path.exists(pathname_out) is False:
-			os.makedirs('../GDAL/')
+		pathname_out = '../GDAL/Translate/' + pathname_out[:-4] + '_geos_traslate.tif'
+		if os.path.exists('../GDAL/Translate/') is False:
+			os.makedirs('../GDAL/Translate')
 		os.system('gdal_translate -srcwin 0, 0, 958, 570 -a_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0" -a_ullr -1025637.42, 4614118.21, -67509.04, 4044041.83 ' + pathname_in + ' ' + pathname_out)
 		tiff = Tiff(pathname_out)
-		tiff.draw_In(self.parent.centralWidget())		
-		
+		tiff.draw_In(self.parent.centralWidget())
+		self.parent.cimg = tiff
+		self.close()
+
 
 class uiOpenFile(QFileDialog):
 	def __init__(self, parent):
@@ -277,12 +295,6 @@ class uiMainWindow(QMainWindow):
 			button_open.setStatusTip("Open an image")
 			button_open.triggered.connect(uiOpenFile(self).on_click)
 
-			## Gdal button
-			button_gdal = QAction("Gdal", self)
-			button_gdal.setShortcut("Ctrl+G")
-			button_gdal.setStatusTip("Gdal")
-			button_gdal.triggered.connect(uiGdal(self).on_click)
-
 			## Open-FileS button
 			button_open_mult = QAction("Load TIFF images", self)
 			button_open_mult.setShortcut("Ctrl+L")
@@ -296,6 +308,7 @@ class uiMainWindow(QMainWindow):
 
 			## Process Gdal button
 			button_process_gdal = QAction("Gdal", self)
+			button_process_gdal.setShortcut("Ctrl+G")
 			button_process_gdal.setStatusTip("Gdal - Geoloc")
 			button_process_gdal.triggered.connect(uiGdal(self).on_click)
 
