@@ -78,17 +78,24 @@ class uiGdal(QMainWindow):
 		
 	
 	def on_click(self):
-		self.setWindowTitle("GDAL TEST")
+		self.setWindowTitle("GDAL")
 		self.setFixedSize(600, 400)
-		self.button = QPushButton('Mercator',self)
-		self.button.clicked.connect(self.handleButton)
+
+		#Button for a gdal_translate in a geos proj
+		self.button_translate_geos = QPushButton('Translate - GEOS',self)
+		self.button_translate_geos.move(10, 20)
+		self.button_translate_geos.clicked.connect(self.handleButton_TG)
 		self.show()
 
-	def handleButton(self):
-		image_in = self.parent.cimg.pname
-		image_out = image_in.
-		print(image_out)
-		#os.system('gdal_translate -srcwin 0, 0, 958, 570 -a_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0" -a_ullr -1025637.42, 4614118.21, -67509.04, 4044041.83'+self.parent.cimg.pname+)
+	def handleButton_TG(self):
+		pathname_in = self.parent.cimg.pname
+		pathname_out = os.path.basename(pathname_in)
+		pathname_out = '../GDAL/' + pathname_out[:-5] + 'geos_traslate.tif'
+		if os.path.exists(pathname_out) is False:
+			os.makedirs('../GDAL/')
+		os.system('gdal_translate -srcwin 0, 0, 958, 570 -a_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0" -a_ullr -1025637.42, 4614118.21, -67509.04, 4044041.83 ' + pathname_in + ' ' + pathname_out)
+		tiff = Tiff(pathname_out)
+		tiff.draw_In(self.parent.centralWidget())		
 		
 
 class uiOpenFile(QFileDialog):
@@ -269,6 +276,12 @@ class uiMainWindow(QMainWindow):
 			button_open.setShortcut("Ctrl+O")
 			button_open.setStatusTip("Open an image")
 			button_open.triggered.connect(uiOpenFile(self).on_click)
+
+			## Gdal button
+			button_gdal = QAction("Gdal", self)
+			button_gdal.setShortcut("Ctrl+G")
+			button_gdal.setStatusTip("Gdal")
+			button_gdal.triggered.connect(uiGdal(self).on_click)
 
 			## Open-FileS button
 			button_open_mult = QAction("Load TIFF images", self)
