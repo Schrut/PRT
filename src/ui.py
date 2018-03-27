@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QMessageBox,
     QScrollArea,
-		QPushButton,
+	QPushButton,
     QMenuBar,
     QWidget,
     QAction,
