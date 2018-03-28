@@ -1,4 +1,4 @@
 numpy
+tifffile
 GDAL
 opencv-python
-pythonqwt

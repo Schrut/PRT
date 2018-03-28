@@ -105,7 +105,7 @@ class uiGdal(QMainWindow):
 			os.makedirs('../GDAL/Warp/')
 		os.system('gdalwarp -ts 1916, 1140 -s_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0 +ulx=-1025637.42 +uly=4614118.21 +lrx=-67509.04 +lry=4044041.83" -t_srs  "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" ' + pathname_in + ' ' + pathname_out)
 		tiff = Tiff(pathname_out)
-		tiff.draw_In(self.parent.centralWidget())
+		tiff.draw_into(self.parent.centralWidget())
 		self.close()
 
 	def handleButton_TG(self):
@@ -116,7 +116,7 @@ class uiGdal(QMainWindow):
 			os.makedirs('../GDAL/Translate')
 		os.system('gdal_translate -srcwin 0, 0, 958, 570 -a_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0" -a_ullr -1025637.42, 4614118.21, -67509.04, 4044041.83 ' + pathname_in + ' ' + pathname_out)
 		tiff = Tiff(pathname_out)
-		tiff.draw_In(self.parent.centralWidget())
+		tiff.draw_into(self.parent.centralWidget())
 		self.parent.cimg = tiff
 		self.close()
 
@@ -138,7 +138,7 @@ class uiOpenFile(QFileDialog):
 				return
 			
 			tiff = Tiff(fname)
-			tiff.draw_In(self.parent.centralWidget())
+			tiff.draw_into(self.parent.centralWidget())
 			self.parent.set_cimg(tiff)
 
 class uiHisto(QWidget):
