@@ -38,6 +38,8 @@ import numpy as np
 import cv2
 from img import Tiff
 
+from histogram import Histogram
+
 class uiLicenseWindow(QMessageBox):
 	"""
 	The MIT License (MIT)
@@ -93,7 +95,7 @@ class uiGdal(QMainWindow):
 		self.show()
 
 	def handleButton_WG(self):
-		pathname_in = self.parent.cimg.pname
+		pathname_in = self.parent.curr_tiff.pname
 		if not pathname_in.endswith('translate.tif'):
 			print('Not warp to do!')
 			print('Translate -> Warp')
@@ -109,7 +111,7 @@ class uiGdal(QMainWindow):
 		self.close()
 
 	def handleButton_TG(self):
-		pathname_in = self.parent.cimg.pname
+		pathname_in = self.parent.curr_tiff.pname
 		pathname_out = os.path.basename(pathname_in)
 		pathname_out = '../GDAL/Translate/' + pathname_out[:-4] + '_geos_translate.tif'
 		if os.path.exists('../GDAL/Translate/') is False:
@@ -117,75 +119,29 @@ class uiGdal(QMainWindow):
 		os.system('gdal_translate -srcwin 0, 0, 958, 570 -a_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0" -a_ullr -1025637.42, 4614118.21, -67509.04, 4044041.83 ' + pathname_in + ' ' + pathname_out)
 		tiff = Tiff(pathname_out)
 		tiff.draw_into(self.parent.centralWidget())
-		self.parent.cimg = tiff
+		self.parent.curr_tiff = tiff
 		self.close()
 
 
 class uiOpenFile(QFileDialog):
 	def __init__(self, parent):
-			super().__init__(parent)
-			self.parent = parent
-			
-	def on_click(self):
-			self.title = "Open a TIFF image"
-			fname = self.getOpenFileName(self.parent,
-										"Open TIFF image", 
-										"..",
-										"Image Files (*.tiff *.tif)"
-										)[0] # Take only file name
-
-			if fname == "": 
-				return
-			
-			tiff = Tiff(fname)
-			tiff.draw_into(self.parent.centralWidget())
-			self.parent.set_cimg(tiff)
-
-class uiHisto(QWidget):
-	def __init__(self, parent):
 		super().__init__(parent)
 		self.parent = parent
-
+			
 	def on_click(self):
-		
-		# Pour le moment, on passe
-		# TODO: Afficher une fenêtre avec message d'erreur
-		# Encore plus tard, griser le bouton quand il n'y a pas d'image load
-		# Possibilité de calculer l'histogram de l'image source (16-Bits) & image normalisée sur 8-bits ???
-		if self.parent.cimg is None:
+		self.title = "Open a TIFF image"
+		fname = self.getOpenFileName(self.parent,
+									"Open TIFF image", 
+									"..",
+									"Image Files (*.tiff *.tif)"
+									)[0] # Take only file name
+
+		if fname == "": 
 			return
-
 		
-		"""
-		TODO:
-			read documentation about numpy histogram compute:
-				https://docs.scipy.org/doc/numpy/reference/generated/numpy.histogram.html
-
-			about Qwt:
-				https://pypi.python.org/pypi/PythonQwt
-		"""
-		# Compute histogram with source image
-		## hist = np.histogram(a=self.parent.cimg.source, bins=range(pow(2,16)))[0]
-
-		# With 8bits normalized image
-		hist = np.histogram(a=self.parent.cimg.to_8bits(), bins=range(256))[0]
-
-		# Build the histogram plot
-		histo_plot = QwtPlot("Histogram")
-
-		# Creates a curve and insert values
-		curve = QwtPlotCurve("Values")
-		curve.setSamples(hist)
-		
-		# Style
-		curve_color = QColor(0, 0, 255)
-		curve.setPen(QPen(curve_color))
-		curve.setBrush(curve_color)
-
-		# Attach curve to histogram plot, then draw.
-		curve.attach(histo_plot)
-		histo_plot.setMinimumSize(480, 320)
-		histo_plot.show()
+		tiff = Tiff(fname)
+		tiff.draw_into(self.parent.centralWidget())
+		self.parent.curr_tiff = tiff
 
 class uiOpenfFiles(QFileDialog):
 	"""
@@ -205,11 +161,13 @@ class uiOpenfFiles(QFileDialog):
 
 	def on_clik(self):
 		self.title = "Open multiple TIFF images"
-		fnames = self.getOpenFileNames(self.parent,
-									  "Load TIFF images",
-									  "..",
-									  "Images Files (*.tiff *tif)"
-									  )[0]
+		fnames = self.getOpenFileNames(
+			self.parent,
+			"Load TIFF images",
+			"..",
+			"Images Files (*.tiff *tif)"
+		)[0]
+									  
 		frames = len(fnames)
 
 		# If cancel triggered
@@ -233,12 +191,13 @@ class uiOpenfFiles(QFileDialog):
 		# 25 frames/sec
 		# Size( width, height )
 		# False -> not a color video (only grey images here)
-		video = cv2.VideoWriter(videopath+"video.mkv", 
-								cv2.VideoWriter_fourcc('H','F','Y','U'), 
-								25.0, 
-								(_w, _h), 
-								False
-							)
+		video = cv2.VideoWriter(
+			videopath+"video.mkv", 
+			cv2.VideoWriter_fourcc('H','F','Y','U'), 
+			25.0, 
+			(_w, _h), 
+			False
+		)
 		
 		# If the VideoWriter creation failed, exit.
 		# e.g.:
@@ -266,76 +225,81 @@ class uiOpenfFiles(QFileDialog):
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	cimg = None # Current image display into MainWindow
+	curr_tiff = None # Current Tiff
+	prev_tiff = None # Previous Tiff into list
+	next_tiff = None # Next Tiff into list
 
 	def __init__(self, screen):
-			super().__init__()
-			self.title = "PRT"
-			self.width = 1080
-			self.height = 720
-			self.left = (screen.size().width() - self.width) / 2
-			self.top = (screen.size().height() - self.height) / 2
-			self.build()
+		super().__init__()
+		self.title = "PRT"
+		self.width = 1080
+		self.height = 720
+		self.left = (screen.size().width() - self.width) / 2
+		self.top = (screen.size().height() - self.height) / 2
+		self.build()
 
-	def set_cimg(self, tiff):
-		self.cimg = tiff
+	def draw_histogram(self):
+		if self.curr_tiff is not None:
+			Histogram(self, self.curr_tiff.source)
 
 	def build(self):
-			self.setWindowTitle(self.title)
-			self.setGeometry(self.left, self.top, self.width, self.height)
+		self.setWindowTitle(self.title)
+		self.setGeometry(self.left, self.top, self.width, self.height)
 
-			scroll_area = QScrollArea()
-			self.setCentralWidget(scroll_area)
+		scroll_area = QScrollArea()
+		self.setCentralWidget(scroll_area)
 
-			# Buttons
-			## Exit button
-			button_exit = QAction("Exit", self)
-			button_exit.setShortcut("Ctrl+Q")
-			button_exit.setStatusTip("Exit application")
-			button_exit.triggered.connect(self.close)
+		# Buttons
+		## Exit button
+		button_exit = QAction("Exit", self)
+		button_exit.setShortcut("Ctrl+Q")
+		button_exit.setStatusTip("Exit application")
+		button_exit.triggered.connect(self.close)
 
-			## Open-File button
-			button_open = QAction("Open TIFF image", self)
-			button_open.setShortcut("Ctrl+O")
-			button_open.setStatusTip("Open an image")
-			button_open.triggered.connect(uiOpenFile(self).on_click)
+		## Open-File button
+		button_open = QAction("Open TIFF image", self)
+		button_open.setShortcut("Ctrl+O")
+		button_open.setStatusTip("Open an image")
+		button_open.triggered.connect(uiOpenFile(self).on_click)
 
-			## Open-FileS button
-			button_open_mult = QAction("Load TIFF images", self)
-			button_open_mult.setShortcut("Ctrl+L")
-			button_open_mult.setStatusTip("Open multiple TIFF")
-			button_open_mult.triggered.connect(uiOpenfFiles(self).on_clik)
+		## Open-FileS button
+		button_open_mult = QAction("Load TIFF images", self)
+		button_open_mult.setShortcut("Ctrl+L")
+		button_open_mult.setStatusTip("Open multiple TIFF")
+		button_open_mult.triggered.connect(uiOpenfFiles(self).on_clik)
 
-			## Show License button
-			button_license = QAction("License", self)
-			button_license.setStatusTip("Application's license")
-			button_license.triggered.connect(uiLicenseWindow(self).on_click)
+		## Show License button
+		button_license = QAction("License", self)
+		button_license.setStatusTip("Application's license")
+		button_license.triggered.connect(uiLicenseWindow(self).on_click)
 
-			## Process Gdal button
-			button_process_gdal = QAction("Gdal", self)
-			button_process_gdal.setShortcut("Ctrl+G")
-			button_process_gdal.setStatusTip("Gdal - Geoloc")
-			button_process_gdal.triggered.connect(uiGdal(self).on_click)
+		## Process Gdal button
+		button_process_gdal = QAction("Gdal", self)
+		button_process_gdal.setShortcut("Ctrl+G")
+		button_process_gdal.setStatusTip("Gdal - Geoloc")
+		button_process_gdal.triggered.connect(uiGdal(self).on_click)
 
-			button_process_histo = QAction("Histogram", self)
-			button_process_histo.triggered.connect(uiHisto(self).on_click)
+		
+		button_process_histo = QAction("Histogram", self)
+		button_process_histo.setShortcut("Ctrl+H")
+		button_process_histo.triggered.connect(self.draw_histogram)
+		
+		# Menus
+		# Main menu
+		menu = self.menuBar()
 
-			# Menus
-			# Main menu
-			menu = self.menuBar()
+		## File menu
+		menu_file = menu.addMenu("File")
+		menu_file.addAction(button_open)
+		menu_file.addAction(button_open_mult)
+		menu_file.addSeparator()
+		menu_file.addAction(button_exit)
 
-			## File menu
-			menu_file = menu.addMenu("File")
-			menu_file.addAction(button_open)
-			menu_file.addAction(button_open_mult)
-			menu_file.addSeparator()
-			menu_file.addAction(button_exit)
+		## Process menu
+		menu_process = menu.addMenu("Process")
+		menu_process.addAction(button_process_gdal)
+		menu_process.addAction(button_process_histo)
 
-			## Process menu
-			menu_process = menu.addMenu("Process")
-			menu_process.addAction(button_process_gdal)
-			menu_process.addAction(button_process_histo)
-
-			## About menu
-			menu_about = menu.addMenu("About")
-			menu_about.addAction(button_license)
+		## About menu
+		menu_about = menu.addMenu("About")
+		menu_about.addAction(button_license)
