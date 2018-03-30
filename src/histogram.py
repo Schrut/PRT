@@ -5,7 +5,7 @@ from PyQt5.QtChart import (
     QChartView,
     QBarSet,
     QBarSeries,
-    QLineSeries,
+    QValueAxis,
 )
 
 from PyQt5.QtGui import QPainter
@@ -26,28 +26,55 @@ class Histogram(QMainWindow):
 
         # 2D array -> 1D array
         img = self.image.ravel()
+        
+        # Process histogram
         histogram, bin_edges = np.histogram(img, bins='auto')
 
         bar_series = QBarSeries()
-        bar_set = QBarSet("intensities")
+        bar_set = QBarSet("")
 
+        # Append values
         for val in histogram:
             bar_set.append(val)
         
+        # Plot options
         pen = bar_set.pen()
         pen.setColor(Qt.black)
         pen.setWidth(0.1)
         bar_set.setPen(pen)
-
+        
+        # Append bar to the bar series
         bar_series.append(bar_set)
         
+        # Chart object
         chart = QChart()
         chart.addSeries(bar_series)
+
+        # Active animation
         chart.setAnimationOptions(QChart.SeriesAnimations)
+
+        # Do not show title
         chart.legend().setVisible(False)
-        chart.createDefaultAxes()
+
+        # Draw Axes, with [min, max]
+        be_max = bin_edges.max()
+        be_min = bin_edges.min()
+        
+        h_max = histogram.max()
+
+        # Y axis
+        axis_y = QValueAxis()
+        axis_y.setRange(0, h_max)
+
+        # X axis
+        axis_x = QValueAxis()
+        axis_x.setRange(be_min, be_max)
+
+        # Add axis to chart + rendering
+        chart.addAxis(axis_x, Qt.AlignBottom)
+        chart.addAxis(axis_y, Qt.AlignLeft)
 
         view = QChartView(chart)
         view.setRenderHint(QPainter.Antialiasing)
-
+        
         self.setCentralWidget(view) 
