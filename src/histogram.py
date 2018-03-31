@@ -1,4 +1,7 @@
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QShortcut,
+)
 
 from PyQt5.QtChart import (
     QChart,
@@ -8,7 +11,12 @@ from PyQt5.QtChart import (
     QValueAxis,
 )
 
-from PyQt5.QtGui import QPainter
+from PyQt5.QtGui import (
+    QPainter, 
+    QMouseEvent,
+    QKeySequence,
+)
+
 from PyQt5.QtCore import Qt
 
 import numpy as np
@@ -20,9 +28,13 @@ class Histogram(QMainWindow):
         self.build()
         self.show()
         
+        
     def build(self):
         self.setWindowTitle("Histogram")
         self.setMinimumSize(400, 300)
+
+        # Close when ctrl+w is triggered
+        QShortcut(QKeySequence("Ctrl+W"), self, self.close)
 
         # 2D array -> 1D array
         img = self.image.ravel()
@@ -31,20 +43,19 @@ class Histogram(QMainWindow):
         histogram, bin_edges = np.histogram(img, bins='auto')
 
         bar_series = QBarSeries()
-        bar_set = QBarSet("")
+        bar_ = QBarSet("")
 
         # Append values
         for val in histogram:
-            bar_set.append(val)
-        
-        # Plot options
-        pen = bar_set.pen()
+            bar_.append(val)
+
+        pen = bar_.pen()
         pen.setColor(Qt.black)
         pen.setWidth(0.1)
-        bar_set.setPen(pen)
+        bar_.setPen(pen)
         
         # Append bar to the bar series
-        bar_series.append(bar_set)
+        bar_series.append(bar_)
         
         # Chart object
         chart = QChart()
@@ -57,16 +68,14 @@ class Histogram(QMainWindow):
         chart.legend().setVisible(False)
 
         # Draw Axes, with [min, max]
-        be_max = bin_edges.max()
-        be_min = bin_edges.min()
-        
-        h_max = histogram.max()
-
         # Y axis
+        h_max = histogram.max()
         axis_y = QValueAxis()
         axis_y.setRange(0, h_max)
 
         # X axis
+        be_max = bin_edges.max()
+        be_min = bin_edges.min()
         axis_x = QValueAxis()
         axis_x.setRange(be_min, be_max)
 
@@ -77,4 +86,4 @@ class Histogram(QMainWindow):
         view = QChartView(chart)
         view.setRenderHint(QPainter.Antialiasing)
         
-        self.setCentralWidget(view) 
+        self.setCentralWidget(view)
