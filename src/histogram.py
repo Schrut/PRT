@@ -12,8 +12,7 @@ from PyQt5.QtChart import (
 )
 
 from PyQt5.QtGui import (
-    QPainter, 
-    QMouseEvent,
+    QPainter,
     QKeySequence,
 )
 
@@ -27,8 +26,7 @@ class Histogram(QMainWindow):
         self.image = image
         self.build()
         self.show()
-        
-        
+
     def build(self):
         self.setWindowTitle("Histogram")
         self.setMinimumSize(400, 300)

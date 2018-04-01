@@ -40,6 +40,8 @@ from img import Tiff
 
 from histogram import Histogram
 
+import smopy
+
 class uiLicenseWindow(QMessageBox):
 	"""
 	The MIT License (MIT)
@@ -245,6 +247,7 @@ class uiMainWindow(QMainWindow):
 	def build(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(self.left, self.top, self.width, self.height)
+		self.setMinimumSize(self.width, self.height)
 
 		scroll_area = QScrollArea()
 		self.setCentralWidget(scroll_area)
@@ -303,3 +306,7 @@ class uiMainWindow(QMainWindow):
 		## About menu
 		menu_about = menu.addMenu("About")
 		menu_about.addAction(button_license)
+
+		## Test
+		#_map = smopy.Map((42, 0, 43, 0), z=7)
+		#_map.save_png('france.png')

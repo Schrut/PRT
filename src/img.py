@@ -8,18 +8,21 @@ Image module
 
 import os
 import numpy as np
-#import smopy
+
+import smopy
 
 from tifffile import TiffFile
 
 from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import (
+    QImage, 
+    QPixmap, 
+    QPainter,
+)
 
-#### smopy test lib ####
-#_map = smopy.Map((48., -1., 52., 3.), z=5)
-#_map.save_png('test.png')
-#return QImage('test.png')
-#### works great ####
+from draw import RenderArea
+
+from PyQt5.QtCore import Qt
 
 class Tiff():
     """The Tiff class, represents a TIFF image in memory.
@@ -100,7 +103,7 @@ class Tiff():
         Returns:
             QImage -- https://doc.qt.io/qt-5/qimage.html
         """
-
+        
         img = self.to_8bits()
         _h, _w = img.shape
         return QImage(img, _w, _h, _w, QImage.Format_Grayscale8)
@@ -119,8 +122,13 @@ class Tiff():
 
         Arguments:
             w {QWidget} -- the widget in which you want do draw tiff into.
-
         """
-        img_viewer = QLabel()
-        img_viewer.setPixmap(self.to_QPixmap())
-        w.setWidget(img_viewer)
+        
+        area = RenderArea()
+        
+        # test --
+        area.push_pixm(QPixmap('france.png'), x=50, y=50)
+        # test ^^
+        
+        area.push_pixm(self.to_QPixmap(), 0.8)
+        w.setWidget(area)
