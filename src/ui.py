@@ -124,105 +124,6 @@ class uiGdal(QMainWindow):
 		self.parent.curr_tiff = tiff
 		self.close()
 
-
-class uiOpenFile(QFileDialog):
-	def __init__(self, parent):
-		super().__init__(parent)
-		self.parent = parent
-			
-	def on_click(self):
-		self.title = "Open a TIFF image"
-		fname = self.getOpenFileName(self.parent,
-									"Open TIFF image", 
-									"..",
-									"Image Files (*.tiff *.tif)"
-									)[0] # Take only file name
-
-		if fname == "": 
-			return
-		
-		tiff = Tiff(fname)
-		tiff.draw_into(self.parent.centralWidget())
-		self.parent.curr_tiff = tiff
-
-class uiOpenfFiles(QFileDialog):
-	"""
-	For the moment, allows user to choose multiples TIFF files.
-	Its load pathnames into memory, then create a video 
-	(automaticly for the moment, need to add an option)
-	from the image sequence choosen.
-
-	This image sequence could then used to "stabilisize" image sequence.
-
-	TODO:
-		put video process into an other function/file/class -- nothing to do here.
-	"""
-	def __init__(self, parent):
-		super().__init__(parent)
-		self.parent = parent
-
-	def on_clik(self):
-		self.title = "Open multiple TIFF images"
-		fnames = self.getOpenFileNames(
-			self.parent,
-			"Load TIFF images",
-			"..",
-			"Images Files (*.tiff *tif)"
-		)[0]
-									  
-		frames = len(fnames)
-
-		# If cancel triggered
-		if frames == 0:
-			return
-
-		# Read first image to check shape
-		# Meaning that the whole image sequence choosen
-		# must has the same shape (width/height).
-		tiff = Tiff(fnames[0])
-		_h, _w = tiff.shape()
-		
-		# Path security check
-		videopath = "../video/"
-		if os.path.exists(videopath) is False:
-			os.makedirs(videopath)
-
-		# Create a VideoWirter:
-		# output format .MKV
-		# encoded using HFYU (Huffman Lossless Codec)
-		# 25 frames/sec
-		# Size( width, height )
-		# False -> not a color video (only grey images here)
-		video = cv2.VideoWriter(
-			videopath+"video.mkv", 
-			cv2.VideoWriter_fourcc('H','F','Y','U'), 
-			25.0, 
-			(_w, _h), 
-			False
-		)
-		
-		# If the VideoWriter creation failed, exit.
-		# e.g.:
-		# HFYU codec is not present at runtime on the machine.
-		if video.isOpened() is False:
-			print("Video [FAILED]")
-			return
-
-		# Remember that we read the first sequence image.
-		# During the process, 16-bits greyscale images
-		# are converted to 8-bits.
-		video.write(tiff.to_8bits())
-		fnames.pop(0)
-		
-		# Now read all the others.
-		for fname in fnames:
-			tiff = Tiff(fname)
-			video.write(tiff.to_8bits())
-
-		# "close" VideoWriter.
-		video.release()
-		print("Video [DONE]")
-
 """
 User Interface Main Window
 """
@@ -244,6 +145,39 @@ class uiMainWindow(QMainWindow):
 		if self.curr_tiff is not None:
 			Histogram(self, self.curr_tiff.source)
 
+	def get_tiffs(self):
+		"""Load tiffs files names into memory.
+
+		TODO:
+			Une classe qui centralise le travail sur la séquence de Tiff (faire quelque chose de fnames):
+				-> LA CLASSE uiMainWindow NE doit PLUS S'OCCUPER de SAUVEGARDER en mémoire les IMAGES.
+					----> juste appeler les bonnes fonctions pour afficher la bonne image.
+					
+				-> savoir qu'elle est l'image affichée
+				-> charger en mémoire l'image précédente et suivante (permet de switch rapidement 
+					-- attention aux exceptions de bords et de longueur de séquence)
+				-> permettra de rendre facile l'implémentation de Slider
+				-> KeyEvent (touches flêches) à implémenter pour le slider.
+		"""
+
+
+		""" Pour le moment: lit une séquence, 
+		mais n'affiche que la première.
+		"""
+
+		fnames = QFileDialog.getOpenFileNames(
+			self, 
+			"Load a Tiff sequence", 
+			"..",
+			"Images Files (*.tiff *.tif)"
+		)[0]
+
+		if not fnames:
+			return
+		
+		self.curr_tiff = Tiff(fnames[0])
+		self.curr_tiff.draw_into(self.centralWidget())
+
 	def build(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(self.left, self.top, self.width, self.height)
@@ -256,24 +190,15 @@ class uiMainWindow(QMainWindow):
 		## Exit button
 		button_exit = QAction("Exit", self)
 		button_exit.setShortcut("Ctrl+Q")
-		button_exit.setStatusTip("Exit application")
 		button_exit.triggered.connect(self.close)
 
-		## Open-File button
-		button_open = QAction("Open TIFF image", self)
+		## Open-Files button
+		button_open = QAction("Open Tiffs", self)
 		button_open.setShortcut("Ctrl+O")
-		button_open.setStatusTip("Open an image")
-		button_open.triggered.connect(uiOpenFile(self).on_click)
-
-		## Open-FileS button
-		button_open_mult = QAction("Load TIFF images", self)
-		button_open_mult.setShortcut("Ctrl+L")
-		button_open_mult.setStatusTip("Open multiple TIFF")
-		button_open_mult.triggered.connect(uiOpenfFiles(self).on_clik)
+		button_open.triggered.connect(self.get_tiffs)
 
 		## Show License button
 		button_license = QAction("License", self)
-		button_license.setStatusTip("Application's license")
 		button_license.triggered.connect(uiLicenseWindow(self).on_click)
 
 		## Process Gdal button
@@ -294,7 +219,6 @@ class uiMainWindow(QMainWindow):
 		## File menu
 		menu_file = menu.addMenu("File")
 		menu_file.addAction(button_open)
-		menu_file.addAction(button_open_mult)
 		menu_file.addSeparator()
 		menu_file.addAction(button_exit)
 
