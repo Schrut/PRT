@@ -1,4 +1,4 @@
 numpy
-tifffile
+libtiff
 GDAL
 opencv-python

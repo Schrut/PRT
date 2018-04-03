@@ -8,10 +8,9 @@ Image module
 
 import os
 import numpy as np
-
 import smopy
 
-from tifffile import TiffFile
+from libtiff import TIFF
 
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import (
@@ -65,8 +64,9 @@ class Tiff():
         print("Loading image '"+pathname+"' -> ", end="")
         if not os.path.exists(pathname):
             return False
-
-        self.source = TiffFile(pathname).asarray()
+        
+        tif = TIFF.open(pathname, 'r')
+        self.source = tif.read_image()
         return True
 
     def size(self):

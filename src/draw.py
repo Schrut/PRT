@@ -9,7 +9,7 @@ from PyQt5.QtCore import QRect
 
 class RenderArea(QLabel):
     """ Create a "RenderArea" in which you
-    can display mutiples QPixmap.
+    can display multiples QPixmap.
     """
     def __init__(self, parent=None):
         super().__init__(parent)
