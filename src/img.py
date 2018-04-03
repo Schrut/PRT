@@ -1,27 +1,18 @@
 """
 Image module
-
-    smopy:
-        https://github.com/rossant/smopy
-        https://nbviewer.jupyter.org/github/rossant/smopy/blob/master/examples/example1.ipynb
 """
 
 import os
 import numpy as np
-import smopy
 
 from libtiff import TIFF
 
-from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import (
     QImage, 
-    QPixmap, 
-    QPainter,
+    QPixmap,
 )
 
 from draw import RenderArea
-
-from PyQt5.QtCore import Qt
 
 class Tiff():
     """The Tiff class, represents a TIFF image in memory.
@@ -123,12 +114,11 @@ class Tiff():
         Arguments:
             w {QWidget} -- the widget in which you want do draw tiff into.
         """
-        
+
         area = RenderArea()
-        
-        # test --
-        area.push_pixm(QPixmap('france.png'), x=50, y=50)
-        # test ^^
-        
-        area.push_pixm(self.to_QPixmap(), 0.8)
+
+        area.push(self.to_QPixmap(), 0.85)
+        area.push(QPixmap('france.png'), 1.0, 50, 50)
+        area.paint()
+
         w.setWidget(area)
