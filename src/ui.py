@@ -80,29 +80,44 @@ class uiGdal(QMainWindow):
 		super().__init__(parent)
 		self.parent = parent
 		
-	
+	"""
+	Here the GDAL happen.
+	In two steps : 
+		-Translate which will geolocate the image
+		-Warp will scaled the image
+	"""
+
+
+
+	"""
+	GDAL doit charger toute la séquence et la transformer pour pouvoir ouvrir une séquence géoloc et OK pour l'affichage.
+	"""
 	def on_click(self):
-		self.setWindowTitle("GDAL")
-		self.setFixedSize(600, 400)
 
-		#Button for a gdal_translate in a geos proj
-		self.button_translate_geos = QPushButton('Translate - GEOS',self)
-		self.button_translate_geos.move(10, 20)
-		self.button_translate_geos.clicked.connect(self.handleButton_TG)
-		
-		#Button for a gdal_warp in a geos proj
-		self.button_warp_geos = QPushButton('Warp - Mercator',self)
-		self.button_warp_geos.move(10, 100)
-		self.button_warp_geos.clicked.connect(self.handleButton_WG)
-		self.show()
-
-	def handleButton_WG(self):
+		#Pick the current image pathname
 		pathname_in = self.parent.curr_tiff.pname
-		if not pathname_in.endswith('translate.tif'):
-			print('Not warp to do!')
-			print('Translate -> Warp')
-			self.close()
-			return False
+		
+		#Take only the basename/file name
+		pathname_out = os.path.basename(pathname_in)
+
+		#Define the pathname for the output
+		pathname_out = '../GDAL/Translate/' + pathname_out[:-4] + '_geos_translate.tif'
+
+		#Create a GDAL folder if necessary
+		if os.path.exists('../GDAL/Translate/') is False:
+			os.makedirs('../GDAL/Translate')
+
+		#The actual GDAL transformation
+		os.system('gdal_translate -srcwin 0, 0, 958, 570 -a_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0" -a_ullr -1025637.42, 4614118.21, -67509.04, 4044041.83 ' + pathname_in + ' ' + pathname_out)
+		
+		#Drawing the Image
+		tiff = Tiff(pathname_out)
+		tiff.draw_into(self.parent.centralWidget())
+		self.parent.curr_tiff = tiff
+
+
+		#Same thing here, but this time we warp the image
+		pathname_in = self.parent.curr_tiff.pname
 		pathname_out = os.path.basename(pathname_in)
 		pathname_out = '../GDAL/Warp/' + pathname_out[:-4] + '_mercator_warp.tif'
 		if os.path.exists('../GDAL/Warp/') is False:
@@ -110,19 +125,8 @@ class uiGdal(QMainWindow):
 		os.system('gdalwarp -ts 1916, 1140 -s_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0 +ulx=-1025637.42 +uly=4614118.21 +lrx=-67509.04 +lry=4044041.83" -t_srs  "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" ' + pathname_in + ' ' + pathname_out)
 		tiff = Tiff(pathname_out)
 		tiff.draw_into(self.parent.centralWidget())
-		self.close()
-
-	def handleButton_TG(self):
-		pathname_in = self.parent.curr_tiff.pname
-		pathname_out = os.path.basename(pathname_in)
-		pathname_out = '../GDAL/Translate/' + pathname_out[:-4] + '_geos_translate.tif'
-		if os.path.exists('../GDAL/Translate/') is False:
-			os.makedirs('../GDAL/Translate')
-		os.system('gdal_translate -srcwin 0, 0, 958, 570 -a_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0" -a_ullr -1025637.42, 4614118.21, -67509.04, 4044041.83 ' + pathname_in + ' ' + pathname_out)
-		tiff = Tiff(pathname_out)
-		tiff.draw_into(self.parent.centralWidget())
 		self.parent.curr_tiff = tiff
-		self.close()
+
 
 """
 User Interface Main Window
