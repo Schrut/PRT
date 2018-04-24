@@ -51,12 +51,11 @@ class TiffSequence():
     def nextone(self):
         return self.img_next
 
-    def set_neighbours(self, index):
-        """Set neighbours of the indexed image.
+    def set_previous(self, index):
+        """Set previous neighbour
 
-        corner cases:
+        corner case:
             current image == previous image
-            current image == next image
 
         Arguments:
             index {integer} -- Index between [0, self.img_number[
@@ -66,12 +65,22 @@ class TiffSequence():
             self.img_prev = self.img_curr
         else:
             self.img_prev = (index-1, Tiff(self.paths[index-1]))
-        
+
+
+    def set_nextone(self, index):
+        """Set next neighbour
+
+        corner case:
+            current image == next image
+
+        Arguments:
+            index {integer} -- Index between [0, self.img_number[
+        """
         if index is self.img_number-1:
             self.img_next = self.img_curr
         else:
             self.img_next = (index+1, Tiff(self.paths[index+1]))
-        
+
 
     def active(self, index):
         """`active` a given image thanks to its index.
@@ -80,7 +89,6 @@ class TiffSequence():
         Arguments:
             index {integer} -- Index between [0, self.img_number[
         """
-
         # No paths given
         if not self.paths:
             return
@@ -91,7 +99,8 @@ class TiffSequence():
 
         # Read the current (active) image
         self.img_curr = (index, Tiff(self.paths[index]))
-        self.set_neighbours(index)
+        self.set_previous(index)
+        self.set_nextone(index)
 
 
     def shift_left(self):
@@ -104,7 +113,7 @@ class TiffSequence():
 
         self.img_next = self.img_curr
         self.img_curr = self.img_prev
-        self.set_neighbours(self.img_curr[0])
+        self.set_previous(self.img_curr[0])
 
 
     def shift_right(self):
@@ -117,7 +126,7 @@ class TiffSequence():
         
         self.img_prev = self.img_curr
         self.img_curr = self.img_next
-        self.set_neighbours(self.img_curr[0])
+        self.set_nextone(self.img_curr[0])
 
 
 class Tiff():
