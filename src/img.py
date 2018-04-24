@@ -14,6 +14,112 @@ from PyQt5.QtGui import (
 
 from draw import RenderArea
 
+class TiffSequence():
+    """Stacked Tiff images
+    Always have at least two images in memory.
+
+    i.e:
+        4 images loaded:
+
+        current image: 0
+            memory[0, {0}, 1] <--------------- prev == curr
+        move right, current image: 1
+            memory[0, {1}, 2]
+        move right, current image: 2
+            memory[1, {2}, 3]
+        move right, current image: 3
+            memory[2, {3}, 3] <--------------- next == curr
+    """
+    paths = []
+    img_number = 0
+
+    img_curr = ()
+    img_prev = ()
+    img_next = ()
+
+    def __init__(self, paths):
+        self.paths = paths
+        self.img_number = len(paths);
+        self.active(0)
+
+    def current(self):
+        return self.img_curr
+
+    def previous(self):
+        return self.img_prev
+    
+    def nextone(self):
+        return self.img_next
+
+    def set_neighbours(self, index):
+        """Set neighbours of the indexed image.
+
+        corner cases:
+            current image == previous image
+            current image == next image
+
+        Arguments:
+            index {integer} -- Index between [0, self.img_number[
+        """
+
+        if index is 0:
+            self.img_prev = self.img_curr
+        else:
+            self.img_prev = (index-1, Tiff(self.paths[index-1]))
+        
+        if index is self.img_number-1:
+            self.img_next = self.img_curr
+        else:
+            self.img_next = (index+1, Tiff(self.paths[index+1]))
+        
+
+    def active(self, index):
+        """`active` a given image thanks to its index.
+        Will change the current image, and its neighbours into memory.
+
+        Arguments:
+            index {integer} -- Index between [0, self.img_number[
+        """
+
+        # No paths given
+        if not self.paths:
+            return
+       
+        # Index given is out of range.
+        elif index < 0 or self.img_number <= index:
+            return
+
+        # Read the current (active) image
+        self.img_curr = (index, Tiff(self.paths[index]))
+        self.set_neighbours(index)
+
+
+    def shift_left(self):
+        """Shift the memory to the left.
+        -> previous image become the new current image.
+        """
+
+        if self.img_curr[0] is 0:
+            return
+
+        self.img_next = self.img_curr
+        self.img_curr = self.img_prev
+        self.set_neighbours(self.img_curr[0])
+
+
+    def shift_right(self):
+        """Shift the memory to the right.
+        -> next image become the new current image.
+        """
+        
+        if self.img_curr[0] is self.img_number-1:
+            return
+        
+        self.img_prev = self.img_curr
+        self.img_curr = self.img_next
+        self.set_neighbours(self.img_curr[0])
+
+
 class Tiff():
     """The Tiff class, represents a TIFF image in memory.
 

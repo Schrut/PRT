@@ -36,7 +36,7 @@ from qwt import (
 import os
 import numpy as np
 import cv2
-from img import Tiff
+from img import Tiff, TiffSequence
 
 from histogram import Histogram
 
@@ -178,9 +178,18 @@ class uiMainWindow(QMainWindow):
 
 		if not fnames:
 			return
+
+		tifs = TiffSequence(fnames)
+
+		### New but will chance very soon.
+		### `curr_tiff` should be replaced by the TiffSequence class.
+		self.curr_tiff = tifs.current()
+		self.curr_tiff.draw_into(self.centralWidget())
 		
+		''' old
 		self.curr_tiff = Tiff(fnames[0])
 		self.curr_tiff.draw_into(self.centralWidget())
+		'''
 
 	def build(self):
 		self.setWindowTitle(self.title)
