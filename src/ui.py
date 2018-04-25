@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
   	QVBoxLayout,
 		QWidget,
     QSlider,
+ 		QGridLayout,
 )
 
 from PyQt5.QtGui import (
@@ -200,36 +201,52 @@ class uiMainWindow(QMainWindow):
 		self.setWindowTitle(self.title)
 		self.setGeometry(self.left, self.top, self.width, self.height)
 		self.setMinimumSize(self.width, self.height)
-		"""
-		self.main_layout = QHBoxLayout()
 
-		self.main_layout.addWidget(pButton_add)
-
-		print(self.main_layout)
-		"""
-
+		#Define the Scroll Area where the image will be printed
 		self.scroll_area = QScrollArea()
 
+		#The Slider to scroll through the sequence 
 		self.slider = QSlider(Qt.Horizontal)
 		self.slider.setFocusPolicy(Qt.StrongFocus)
 		self.slider.setTickPosition(QSlider.NoTicks)
 		self.slider.setTickInterval(10)
 		self.slider.setSingleStep(1)
 
-		self.mainLayout = QVBoxLayout()
+		#Slider 2 just for fun
+		self.slider2 = QSlider(Qt.Horizontal)
+		self.slider2.setFocusPolicy(Qt.StrongFocus)
+		self.slider2.setTickPosition(QSlider.NoTicks)
+		self.slider2.setTickInterval(10)
+		self.slider2.setSingleStep(1)
 
-		# add all main to the main vLayout
-		self.mainLayout.addWidget(self.slider)
-		self.mainLayout.addWidget(self.scroll_area)
+		#Button just for fun, and test
+		self.button_test = QPushButton()
+		self.button_test.setText("Bouton Test")
 
-		# central widget
+
+		self.main_layout = QGridLayout()
+		self.sub_layout_image = QVBoxLayout()
+		self.sub_layout_command = QVBoxLayout()
+
+
+		# Add the widgets to the right layout 
+		self.sub_layout_image.addWidget(self.scroll_area)
+		self.sub_layout_image.addWidget(self.slider)
+
+		self.sub_layout_command.addWidget(self.button_test)
+		self.sub_layout_command.addWidget(self.slider2)
+
+
+		#Add the two layouts in the main layout
+		self.main_layout.addLayout(self.sub_layout_command,0,1)
+		self.main_layout.addLayout(self.sub_layout_image,0,0)
+
+		#Define the main Layout / Window
 		self.centralWidget = QWidget()
-		self.centralWidget.setLayout(self.mainLayout)
+		self.centralWidget.setLayout(self.main_layout)
 
-		# set central widget
+		#Set central widget
 		self.setCentralWidget(self.centralWidget)
-
-
 
 
 		# Buttons
