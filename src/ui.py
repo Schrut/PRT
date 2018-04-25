@@ -11,11 +11,11 @@ from PyQt5.QtWidgets import (
     QWidget,
     QAction,
     QLabel,
-		QHBoxLayout,
+	QHBoxLayout,
   	QVBoxLayout,
-		QWidget,
+	QWidget,
     QSlider,
- 		QGridLayout,
+ 	QGridLayout,
 )
 
 from PyQt5.QtGui import (
@@ -29,15 +29,6 @@ from PyQt5.QtCore import (
     Qt,
 )
 
-"""
-https://pypi.python.org/pypi/PythonQwt
-"""
-"""
-from qwt import (
-    QwtPlotCurve,
-    QwtPlot,
-)
-"""
 import os
 import numpy as np
 import cv2
@@ -92,12 +83,14 @@ class uiGdal(QMainWindow):
 		-Warp will scaled the image
 	"""
 
-
-
 	"""
 	GDAL doit charger toute la séquence et la transformer pour pouvoir ouvrir une séquence géoloc et OK pour l'affichage.
 	"""
 	def on_click(self):
+		"""
+		#
+		# TODO:
+		#	Total rework with the tiff sequence needed
 
 		#Pick the current image pathname
 		pathname_in = self.parent.curr_tiff.pname
@@ -131,15 +124,14 @@ class uiGdal(QMainWindow):
 		tiff = Tiff(pathname_out)
 		tiff.draw_into(self.parent.centralWidget())
 		self.parent.curr_tiff = tiff
+		"""
 
 
 """
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	curr_tiff = None # Current Tiff
-	prev_tiff = None # Previous Tiff into list
-	next_tiff = None # Next Tiff into list
+	tifs = None
 
 	def __init__(self, screen):
 		super().__init__()
@@ -151,27 +143,11 @@ class uiMainWindow(QMainWindow):
 		self.build()
 
 	def draw_histogram(self):
-		if self.curr_tiff is not None:
-			Histogram(self, self.curr_tiff.source)
+		if self.tifs:
+			Histogram(self, self.tifs.current()[1].source)
 
 	def get_tiffs(self):
-		"""Load tiffs files names into memory.
-
-		TODO:
-			Une classe qui centralise le travail sur la séquence de Tiff (faire quelque chose de fnames):
-				-> LA CLASSE uiMainWindow NE doit PLUS S'OCCUPER de SAUVEGARDER en mémoire les IMAGES.
-					----> juste appeler les bonnes fonctions pour afficher la bonne image.
-					
-				-> savoir qu'elle est l'image affichée
-				-> charger en mémoire l'image précédente et suivante (permet de switch rapidement 
-					-- attention aux exceptions de bords et de longueur de séquence)
-				-> permettra de rendre facile l'implémentation de Slider
-				-> KeyEvent (touches flêches) à implémenter pour le slider.
-		"""
-
-
-		""" Pour le moment: lit une séquence, 
-		mais n'affiche que la première.
+		"""Load multiples tiffs into memory
 		"""
 
 		fnames = QFileDialog.getOpenFileNames(
@@ -184,18 +160,21 @@ class uiMainWindow(QMainWindow):
 		if not fnames:
 			return
 
-		tifs = TiffSequence(fnames)
+		self.tifs = TiffSequence(fnames)
+		self.tifs.current()[1].draw_into(self.scroll_area)
 
-		### New but will chance very soon.
-		### `curr_tiff` should be replaced by the TiffSequence class.
-		#self.curr_tiff = tifs.current()
-		#self.curr_tiff.draw_into(self.centralWidget())
-		#AttributeError: 'tuple' object has no attribute 'draw_into'
-		
-		
-		self.curr_tiff = Tiff(fnames[0])
-		self.curr_tiff.draw_into(self.scroll_area)
-		
+		size = self.tifs.size()
+		slider_w = self.slider.sizeHint().width()
+
+		print(size, " ", slider_w)
+		print(slider_w/size)
+
+		self.slider.setTickPosition(QSlider.TicksBelow)
+		self.slider.setTickInterval(int(slider_w/size))
+		self.slider.setSingleStep(int(slider_w/size))
+		#self.slider.setMaximum(size * int(slider_w/size))
+		#self.slider.setMinimum(0)
+
 
 	def build(self):
 		self.setWindowTitle(self.title)
@@ -209,8 +188,9 @@ class uiMainWindow(QMainWindow):
 		self.slider = QSlider(Qt.Horizontal)
 		self.slider.setFocusPolicy(Qt.StrongFocus)
 		self.slider.setTickPosition(QSlider.NoTicks)
-		self.slider.setTickInterval(10)
-		self.slider.setSingleStep(1)
+		#self.slider.setTickPosition()
+		#self.slider.setTickInterval(10)
+		#self.slider.setSingleStep(1)
 
 		#Slider 2 just for fun
 		self.slider2 = QSlider(Qt.Horizontal)
