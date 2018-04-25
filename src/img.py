@@ -42,6 +42,9 @@ class TiffSequence():
         self.img_number = len(paths);
         self.active(0)
 
+    def size(self):
+        return self.img_number
+
     def current(self):
         return self.img_curr
 
