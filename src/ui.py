@@ -11,6 +11,10 @@ from PyQt5.QtWidgets import (
     QWidget,
     QAction,
     QLabel,
+		QHBoxLayout,
+  	QVBoxLayout,
+		QWidget,
+    QSlider,
 )
 
 from PyQt5.QtGui import (
@@ -183,21 +187,50 @@ class uiMainWindow(QMainWindow):
 
 		### New but will chance very soon.
 		### `curr_tiff` should be replaced by the TiffSequence class.
-		self.curr_tiff = tifs.current()
-		self.curr_tiff.draw_into(self.centralWidget())
+		#self.curr_tiff = tifs.current()
+		#self.curr_tiff.draw_into(self.centralWidget())
+		#AttributeError: 'tuple' object has no attribute 'draw_into'
 		
-		''' old
+		
 		self.curr_tiff = Tiff(fnames[0])
-		self.curr_tiff.draw_into(self.centralWidget())
-		'''
+		self.curr_tiff.draw_into(self.scroll_area)
+		
 
 	def build(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(self.left, self.top, self.width, self.height)
 		self.setMinimumSize(self.width, self.height)
+		"""
+		self.main_layout = QHBoxLayout()
 
-		scroll_area = QScrollArea()
-		self.setCentralWidget(scroll_area)
+		self.main_layout.addWidget(pButton_add)
+
+		print(self.main_layout)
+		"""
+
+		self.scroll_area = QScrollArea()
+
+		self.slider = QSlider(Qt.Horizontal)
+		self.slider.setFocusPolicy(Qt.StrongFocus)
+		self.slider.setTickPosition(QSlider.NoTicks)
+		self.slider.setTickInterval(10)
+		self.slider.setSingleStep(1)
+
+		self.mainLayout = QVBoxLayout()
+
+		# add all main to the main vLayout
+		self.mainLayout.addWidget(self.slider)
+		self.mainLayout.addWidget(self.scroll_area)
+
+		# central widget
+		self.centralWidget = QWidget()
+		self.centralWidget.setLayout(self.mainLayout)
+
+		# set central widget
+		self.setCentralWidget(self.centralWidget)
+
+
+
 
 		# Buttons
 		## Exit button
