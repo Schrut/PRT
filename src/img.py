@@ -30,7 +30,7 @@ class TiffSequence():
 
     def __init__(self, paths):
         self.paths = paths
-        self.img_number = len(paths);
+        self.img_number = len(paths)
         self.active(0)
 
     def size(self):
@@ -148,7 +148,6 @@ class Tiff():
             else:
                 self.name = os.path.basename(pathname)
                 self.pname = pathname
-                print("[OK]")
         else:
             print("[FAILED]\npathname doesn't contains TIFF extension.")
 
@@ -161,7 +160,6 @@ class Tiff():
         Returns:
             boolean -- True if image found.
         """
-        print("Loading image '"+pathname+"' -> ", end="")
         if not os.path.exists(pathname):
             return False
         

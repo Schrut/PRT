@@ -134,7 +134,9 @@ class uiGdal(QMainWindow):
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	tifs = None # Tiff images sequence
+	tifs = None # Tiff images sequences
+	img_slider_old = 0
+	img_slider_step = 1
 
 	def __init__(self, screen):
 		super().__init__()
@@ -144,6 +146,30 @@ class uiMainWindow(QMainWindow):
 		self.left = (screen.size().width() - self.width) / 2
 		self.top = (screen.size().height() - self.height) / 2
 		self.build()
+
+	##### SIGNALS #####
+	def img_slider_moved(self, value):
+		move = 0
+		step = self.img_slider.singleStep()
+		old = self.img_slider_old
+
+		# Check if we are moving right or left.
+		if value >= (old + step):   move = 2 # Right
+		elif value <= (old - step): move = 1 # Left
+		
+		# move values:
+		# -> 0: nothing to do.
+		# -> 1: shift the list to the left, draw the new image.
+		# -> 2: shift the lsit to the right, draw the new image.
+		if move > 0:
+			if move is 2:
+				self.tifs.shift_right()
+			elif move is 1:
+				self.tifs.shift_left()
+			
+			self.img_slider_old = value
+			self.tifs.current()[1].draw_into(self.img_area)
+
 
 	def draw_histogram(self):
 		if self.tifs:
@@ -166,6 +192,22 @@ class uiMainWindow(QMainWindow):
 
 		self.tifs = TiffSequence(fnames)
 
+		size = self.tifs.size()
+		width = self.img_slider.width()
+
+		step = int(width/size)
+		if step is 0:
+			step = 1
+		
+		self.img_slider.setEnabled(True)
+		self.img_slider.setMaximum( size*step )
+		self.img_slider.setSingleStep(step)
+		self.img_slider.setTickInterval(step)
+		self.img_slider.setTickPosition(QSlider.TicksBelow)
+
+		# Reset the "old position" of the current slider.
+		self.img_slider_old = 0
+		
 		# The `draw_into()` function should disapear soon.
 		_, tif = self.tifs.current()
 		tif.draw_into(self.img_area)
@@ -177,8 +219,10 @@ class uiMainWindow(QMainWindow):
 
 		# The main slider
 		slider = QSlider(Qt.Horizontal)
-		slider.setFocusPolicy(Qt.StrongFocus)
-		slider.setTickPosition(QSlider.NoTicks)
+		slider.setEnabled(False) # Not usable
+		slider.setFocusPolicy(Qt.StrongFocus) # Mouse & Keyboard can move it
+		slider.setTickPosition(QSlider.NoTicks) # No ticks draw
+		slider.valueChanged.connect(self.img_slider_moved) # What do you do when slider is moved ?
 		
 		# The Left Vertical Box Layout
 		vbox = QVBoxLayout()
