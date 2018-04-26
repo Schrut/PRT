@@ -13,6 +13,8 @@ path = [
 
 sequence = TiffSequence(path)
 
+print("Number of images into sequence:", sequence.size())
+
 ## { 0, 0, 1 }
 print("{ ",
 sequence.previous()[0],

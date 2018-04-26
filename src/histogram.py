@@ -21,14 +21,15 @@ from PyQt5.QtCore import Qt
 import numpy as np
 
 class Histogram(QMainWindow):
-    def __init__(self, parent, image):
+    def __init__(self, parent, image, name=""):
         super().__init__(parent)
         self.image = image
+        self.name = name
         self.build()
         self.show()
 
     def build(self):
-        self.setWindowTitle("Histogram")
+        self.setWindowTitle("Histogram - "+self.name)
         self.setMinimumSize(400, 300)
 
         # Close when ctrl+w is triggered

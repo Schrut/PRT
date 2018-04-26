@@ -1,5 +1,7 @@
 """
 PyQt5 QtWidgets
+
+User Interface classes.
 """
 from PyQt5.QtWidgets import (
     QMainWindow,
@@ -7,15 +9,16 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QScrollArea,
     QPushButton,
+	QGridLayout,
+	QHBoxLayout,
+	QVBoxLayout,
     QMenuBar,
     QWidget,
     QAction,
-    QLabel,
-	QHBoxLayout,
-  	QVBoxLayout,
 	QWidget,
-    QSlider,
- 	QGridLayout,
+	QSlider,
+    QLabel,
+	QMenu,
 )
 
 from PyQt5.QtGui import (
@@ -131,7 +134,7 @@ class uiGdal(QMainWindow):
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	tifs = None
+	tifs = None # Tiff images sequence
 
 	def __init__(self, screen):
 		super().__init__()
@@ -144,9 +147,10 @@ class uiMainWindow(QMainWindow):
 
 	def draw_histogram(self):
 		if self.tifs:
-			Histogram(self, self.tifs.current()[1].source)
+			_, tif = self.tifs.current()
+			Histogram(self, tif.source, tif.name)
 
-	def get_tiffs(self):
+	def load_tiffs(self):
 		"""Load multiples tiffs into memory
 		"""
 
@@ -161,119 +165,101 @@ class uiMainWindow(QMainWindow):
 			return
 
 		self.tifs = TiffSequence(fnames)
-		self.tifs.current()[1].draw_into(self.scroll_area)
 
-		size = self.tifs.size()
-		slider_w = self.slider.sizeHint().width()
+		# The `draw_into()` function should disapear soon.
+		_, tif = self.tifs.current()
+		tif.draw_into(self.img_area)
 
-		print(size, " ", slider_w)
-		print(slider_w/size)
+	###### Interface ######
+	def build_left_vbox(self):
+		# Where we are going to draw images
+		s_area = QScrollArea()
 
-		self.slider.setTickPosition(QSlider.TicksBelow)
-		self.slider.setTickInterval(int(slider_w/size))
-		self.slider.setSingleStep(int(slider_w/size))
-		#self.slider.setMaximum(size * int(slider_w/size))
-		#self.slider.setMinimum(0)
+		# The main slider
+		slider = QSlider(Qt.Horizontal)
+		slider.setFocusPolicy(Qt.StrongFocus)
+		slider.setTickPosition(QSlider.NoTicks)
+		
+		# The Left Vertical Box Layout
+		vbox = QVBoxLayout()
+		vbox.addWidget(s_area)
+		vbox.addWidget(slider)
 
+		# Usefull attributes
+		self.img_area = s_area
+		self.img_slider = slider
 
+		return vbox
+
+	def build_grid(self):
+		grid = QGridLayout()
+		grid.addLayout(self.build_left_vbox(), 0, 0)
+		return grid
+
+	def build_main_widget(self):
+		widget = QWidget()
+		widget.setLayout(self.build_grid())
+		return widget
+
+	####### MENU #######
+	def action_close(self):
+		action = QAction("Close", self)
+		action.setShortcut("Ctrl+Q")
+		action.triggered.connect(self.close)
+		return action
+
+	def action_load_tiffs(self):
+		action = QAction("Open Tiffs", self)
+		action.setShortcut("Ctrl+O")
+		action.triggered.connect(self.load_tiffs)
+		return action
+
+	def action_show_license(self):
+		action = QAction("License", self)
+		action.setShortcut("Ctrl+L")
+		action.triggered.connect(uiLicenseWindow(self).on_click)
+		return action
+
+	def action_draw_histogram(self):
+		action = QAction("Histogram", self)
+		action.setShortcut("Ctrl+H")
+		action.triggered.connect(self.draw_histogram)
+		return action
+
+	def menu_file(self):
+		menu = QMenu("File", self.menuBar())
+		menu.addAction(self.action_load_tiffs())
+		menu.addSeparator()
+		menu.addAction(self.action_close())
+		return menu
+
+	def menu_process(self):
+		menu = QMenu("Process", self.menuBar())
+		menu.addAction(self.action_draw_histogram())
+		return menu
+	
+	def menu_about(self):
+		menu = QMenu("About", self.menuBar())
+		menu.addAction(self.action_show_license())
+		return menu
+
+	def build_menu(self):
+		menu = self.menuBar()
+		menu.addMenu(self.menu_file())
+		menu.addMenu(self.menu_process())
+		menu.addMenu(self.menu_about())
+
+	###### BUILD ALL ######
 	def build(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(self.left, self.top, self.width, self.height)
 		self.setMinimumSize(self.width, self.height)
+		self.build_menu()
+		self.setCentralWidget(self.build_main_widget())
 
-		#Define the Scroll Area where the image will be printed
-		self.scroll_area = QScrollArea()
-
-		#The Slider to scroll through the sequence 
-		self.slider = QSlider(Qt.Horizontal)
-		self.slider.setFocusPolicy(Qt.StrongFocus)
-		self.slider.setTickPosition(QSlider.NoTicks)
-		#self.slider.setTickPosition()
-		#self.slider.setTickInterval(10)
-		#self.slider.setSingleStep(1)
-
-		#Slider 2 just for fun
-		self.slider2 = QSlider(Qt.Horizontal)
-		self.slider2.setFocusPolicy(Qt.StrongFocus)
-		self.slider2.setTickPosition(QSlider.NoTicks)
-		self.slider2.setTickInterval(10)
-		self.slider2.setSingleStep(1)
-
-		#Button just for fun, and test
-		self.button_test = QPushButton()
-		self.button_test.setText("Bouton Test")
-
-
-		self.main_layout = QGridLayout()
-		self.sub_layout_image = QVBoxLayout()
-		self.sub_layout_command = QVBoxLayout()
-
-
-		# Add the widgets to the right layout 
-		self.sub_layout_image.addWidget(self.scroll_area)
-		self.sub_layout_image.addWidget(self.slider)
-
-		self.sub_layout_command.addWidget(self.button_test)
-		self.sub_layout_command.addWidget(self.slider2)
-
-
-		#Add the two layouts in the main layout
-		self.main_layout.addLayout(self.sub_layout_command,0,1)
-		self.main_layout.addLayout(self.sub_layout_image,0,0)
-
-		#Define the main Layout / Window
-		self.centralWidget = QWidget()
-		self.centralWidget.setLayout(self.main_layout)
-
-		#Set central widget
-		self.setCentralWidget(self.centralWidget)
-
-
-		# Buttons
-		## Exit button
-		button_exit = QAction("Exit", self)
-		button_exit.setShortcut("Ctrl+Q")
-		button_exit.triggered.connect(self.close)
-
-		## Open-Files button
-		button_open = QAction("Open Tiffs", self)
-		button_open.setShortcut("Ctrl+O")
-		button_open.triggered.connect(self.get_tiffs)
-
-		## Show License button
-		button_license = QAction("License", self)
-		button_license.triggered.connect(uiLicenseWindow(self).on_click)
-
+		###### need a rework
 		## Process Gdal button
-		button_process_gdal = QAction("Gdal", self)
-		button_process_gdal.setShortcut("Ctrl+G")
-		button_process_gdal.setStatusTip("Gdal - Geoloc")
-		button_process_gdal.triggered.connect(uiGdal(self).on_click)
-
-		
-		button_process_histo = QAction("Histogram", self)
-		button_process_histo.setShortcut("Ctrl+H")
-		button_process_histo.triggered.connect(self.draw_histogram)
-		
-		# Menus
-		# Main menu
-		menu = self.menuBar()
-
-		## File menu
-		menu_file = menu.addMenu("File")
-		menu_file.addAction(button_open)
-		menu_file.addSeparator()
-		menu_file.addAction(button_exit)
-
-		## Process menu
-		menu_process = menu.addMenu("Process")
-		menu_process.addAction(button_process_gdal)
-		menu_process.addAction(button_process_histo)
-
-		## About menu
-		menu_about = menu.addMenu("About")
-		menu_about.addAction(button_license)
-
-		## Test
-		#_map = smopy.Map((42, 0, 43, 0), z=7)
-		#_map.save_png('france.png')
+		#button_process_gdal = QAction("Gdal", self)
+		#button_process_gdal.setShortcut("Ctrl+G")
+		#button_process_gdal.setStatusTip("Gdal - Geoloc")
+		#button_process_gdal.triggered.connect(uiGdal(self).on_click)

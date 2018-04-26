@@ -15,20 +15,11 @@ from PyQt5.QtGui import (
 from draw import RenderArea
 
 class TiffSequence():
-    """Stacked Tiff images
-    Always have at least two images in memory.
+    """A list of TIFF images.
+    Minimum 2 & maximum 3 images are loaded into memory.
 
-    i.e:
-        4 images loaded:
-
-        current image: 0
-            memory[0, {0}, 1] <--------------- prev == curr
-        move right, current image: 1
-            memory[0, {1}, 2]
-        move right, current image: 2
-            memory[1, {2}, 3]
-        move right, current image: 3
-            memory[2, {3}, 3] <--------------- next == curr
+    Each `shit_left()` & `shift_right()` function
+    load only one new image into memory.
     """
     paths = []
     img_number = 0
