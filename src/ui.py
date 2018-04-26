@@ -9,16 +9,16 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QScrollArea,
     QPushButton,
-	QGridLayout,
-	QHBoxLayout,
-	QVBoxLayout,
+    QGridLayout,
+    QHBoxLayout,
+    QVBoxLayout,
     QMenuBar,
     QWidget,
     QAction,
-	QWidget,
-	QSlider,
+    QWidget,
+    QSlider,
     QLabel,
-	QMenu,
+    QMenu,
 )
 
 from PyQt5.QtGui import (
@@ -136,7 +136,6 @@ User Interface Main Window
 class uiMainWindow(QMainWindow):
 	tifs = None # Tiff images sequences
 	img_slider_old = 0
-	img_slider_step = 1
 
 	def __init__(self, screen):
 		super().__init__()
@@ -179,7 +178,6 @@ class uiMainWindow(QMainWindow):
 	def load_tiffs(self):
 		"""Load multiples tiffs into memory
 		"""
-
 		fnames = QFileDialog.getOpenFileNames(
 			self, 
 			"Load a Tiff sequence", 
@@ -190,8 +188,10 @@ class uiMainWindow(QMainWindow):
 		if not fnames:
 			return
 
+		# Save the new sequence
 		self.tifs = TiffSequence(fnames)
 
+		# update the slider
 		size = self.tifs.size()
 		width = self.img_slider.width()
 
@@ -200,6 +200,7 @@ class uiMainWindow(QMainWindow):
 			step = 1
 		
 		self.img_slider.setEnabled(True)
+		self.img_slider.setValue(0)
 		self.img_slider.setMaximum( size*step )
 		self.img_slider.setSingleStep(step)
 		self.img_slider.setTickInterval(step)
