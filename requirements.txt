@@ -1,6 +1,6 @@
 numpy
 pyqt5
 pyqtchart
-libtiff
+tifffile
 opencv-python
 GDAL

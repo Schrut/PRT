@@ -152,7 +152,7 @@ class uiMainWindow(QMainWindow):
 		step = self.img_slider.singleStep()
 		old = self.img_slider_old
 
-		# Check if we are moving right or left.
+		# Check if we have to move left or right.
 		if value >= (old + step):   move = 2 # Right
 		elif value <= (old - step): move = 1 # Left
 		
@@ -167,7 +167,9 @@ class uiMainWindow(QMainWindow):
 				self.tifs.shift_left()
 			
 			self.img_slider_old = value
-			self.tifs.current()[1].draw_into(self.img_area)
+			
+			_, tif = self.tifs.current()
+			tif.draw_into(self.img_area)
 
 
 	def draw_histogram(self):

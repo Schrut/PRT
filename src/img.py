@@ -3,10 +3,12 @@ Image module
 """
 
 import os
+import shutil
 import numpy as np
 
-from libtiff import TIFF
+import tifffile
 
+from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import (
     QImage, 
     QPixmap,
@@ -163,8 +165,7 @@ class Tiff():
         if not os.path.exists(pathname):
             return False
         
-        tif = TIFF.open(pathname, 'r')
-        self.source = tif.read_image()
+        self.source = tifffile.imread(pathname)
         return True
 
     def size(self):
@@ -172,6 +173,14 @@ class Tiff():
 
     def shape(self):
         return self.source.shape
+
+    def histogram(self):
+        """Calcul histogram of the tiff source.
+        
+        Returns:
+            histogram, bin_edges
+        """
+        return np.histogram(self.source.ravel(), bins='auto')
 
     def normalization(self, _min, _max):
         """
@@ -215,7 +224,7 @@ class Tiff():
         return QPixmap.fromImage(self.to_QImage())
 
 
-    def draw_into(self, w):
+    def draw_into(self, w: QWidget):
         """Draw tiff image (QPixmap here) into a widget.
 
         Arguments:
@@ -224,8 +233,8 @@ class Tiff():
 
         area = RenderArea()
 
-        area.push(self.to_QPixmap(), 0.85)
-        area.push(QPixmap('france.png'), 1.0, 50, 50)
+        area.push(self.to_QPixmap())
+        #area.push(QPixmap('france.png'), 1.0, 50, 50)
         area.paint()
 
         w.setWidget(area)
