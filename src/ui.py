@@ -136,9 +136,10 @@ class uiGdal(QMainWindow):
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	draw_area: RenderArea = None
-	tifs: TiffSequence = None # Tiff images sequences
-	img_slider_old: int = 0
+	img_area: RenderArea
+	tifs: TiffSequence
+	img_slider: QSlider
+	img_slider_old: int
 
 	def __init__(self, screen):
 		super().__init__()
@@ -193,11 +194,10 @@ class uiMainWindow(QMainWindow):
 			self.img_slider_old = value
 			_, tif = self.tifs.current()
 
-			self.draw_area.clear()
-			self.draw_area.push(tif.to_QPixmap())
-			self.draw_area.paint()
-			self.img_area.setWidget(self.draw_area)
-
+			self.img_area.clear()
+			self.img_area.push(tif.to_QImage())
+			self.img_area.update()
+			
 	def draw_histogram(self):
 		if self.tifs:
 			_, tif = self.tifs.current()
@@ -236,19 +236,18 @@ class uiMainWindow(QMainWindow):
 
 		# Reset the "old position" of the current slider.
 		self.img_slider_old = 0
-		
 		_, tif = self.tifs.current()
 
-		print(self.img_area.widget())
-
-		self.draw_area.clear()
-		self.draw_area.push(tif.to_QPixmap())
-		self.draw_area.paint()
+		self.img_area.clear()
+		self.img_area.push(tif.to_QImage())
+		self.img_area.update()
 
 	###### Interface ######
 	def build_left_vbox(self):
 		# Where we are going to draw images
 		s_area = QScrollArea()
+		r_area = RenderArea()
+		s_area.setWidget(r_area)
 
 		# The main slider
 		slider = QSlider(Qt.Horizontal)
@@ -263,14 +262,14 @@ class uiMainWindow(QMainWindow):
 		vbox.addWidget(slider)
 
 		# Usefull attributes
-		self.img_area = s_area
+		self.img_area = r_area
 		self.img_slider = slider
 
 		return vbox
 
 	def build_right_vbox(self):
 		button = QPushButton("Try")
-		#button.triggered.connect()
+		#button.triggered.connect() #TODO
 
 		vbox = QVBoxLayout()
 		vbox.addWidget(button)
@@ -342,9 +341,6 @@ class uiMainWindow(QMainWindow):
 		self.setMinimumSize(self.width, self.height)
 		self.build_menu()
 		self.setCentralWidget(self.build_main_widget())
-
-		self.draw_area = RenderArea(self.img_area)
-		self.img_area.setWidget(self.draw_area)
 
 		###### need a rework
 		## Process Gdal button

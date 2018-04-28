@@ -1,27 +1,23 @@
 from PyQt5.QtWidgets import QLabel
-
-from PyQt5.QtGui import (
-    QPainter,
-    QPaintEvent,
-)
+from PyQt5.QtGui import QPainter
 
 class RenderArea(QLabel):
     """ Create a "RenderArea".
     This zone is dedicated to the display of several images.
 
     Main attributes:
-        `images` -> represents a stack of QPixmap+information.
+        `images` -> represents a stack of QImage+information.
     """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
         self.images = []
 
-    def push(self, pixmap, opacity=1.0, x=0, y=0):
-        """ Push a QPixmap + information into stack.
+    def push(self, image, opacity=1.0, x=0, y=0):
+        """ Push a QImage + information into stack.
         """
         self.images.append((
-            pixmap,
+            image,
             opacity, 
             x, 
             y
@@ -37,20 +33,12 @@ class RenderArea(QLabel):
         """
         self.images.clear()
 
-    def paint(self):
-        """ Call the `paintEvent()` function.
-        """
-        self.update()
-        self.repaint()
-        self.parentWidget().repaint()
-
-    def paintEvent(self, ev: QPaintEvent):
+    def paintEvent(self, event):
         """ overload of paintEvent Qt function.
 
         Draw every stacked images with their proprieties
         (i.e.: opacity).
-
-        Images are not 'poped'.
+        
         Stack still has the same size after operation.
 
         QLabel's size is equals to maximum width & heigth
@@ -59,6 +47,9 @@ class RenderArea(QLabel):
         Arguments:
             ev {QPaintEvent} -- A paint event which trigger display.
         """
+
+        if not self.images:
+            return
 
         painter = QPainter(self)
         images = self.images
@@ -69,22 +60,20 @@ class RenderArea(QLabel):
         poped = []
 
         while images:
-            pixmap, opacity, _x, _y = images.pop()
-            poped.append((pixmap, opacity, _x, _y))
+            image, opacity, _x, _y = images.pop()
+            poped.append((image, opacity, _x, _y))
 
             painter.setOpacity(opacity)
-            painter.drawPixmap(_x, _y, pixmap)
+            painter.drawImage(_x, _y, image)
 
-            _w = pixmap.width()
-            _h = pixmap.height()
+            _w = image.width()
+            _h = image.height()
 
             if _w > max_w:
                 max_w = _w
   
             if _h > max_h:
                 max_h = _h
-        
-        painter.end()
 
         while poped:
             images.append(poped.pop())
