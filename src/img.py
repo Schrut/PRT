@@ -230,7 +230,6 @@ class Tiff():
         Arguments:
             w {QWidget} -- the widget in which you want do draw tiff into.
         """
-
         area = RenderArea()
 
         area.push(self.to_QPixmap())

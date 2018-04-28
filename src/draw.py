@@ -41,6 +41,8 @@ class RenderArea(QLabel):
         """ Call the `paintEvent()` function.
         """
         self.update()
+        self.repaint()
+        self.parentWidget().repaint()
 
     def paintEvent(self, ev: QPaintEvent):
         """ overload of paintEvent Qt function.
@@ -81,6 +83,8 @@ class RenderArea(QLabel):
   
             if _h > max_h:
                 max_h = _h
+        
+        painter.end()
 
         while poped:
             images.append(poped.pop())

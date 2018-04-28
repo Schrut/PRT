@@ -35,6 +35,8 @@ from PyQt5.QtCore import (
 import os
 import numpy as np
 import cv2
+
+from draw import RenderArea
 from img import Tiff, TiffSequence
 
 from histogram import Histogram
@@ -134,8 +136,9 @@ class uiGdal(QMainWindow):
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	tifs = None # Tiff images sequences
-	img_slider_old = 0
+	draw_area: RenderArea = None
+	tifs: TiffSequence = None # Tiff images sequences
+	img_slider_old: int = 0
 
 	def __init__(self, screen):
 		super().__init__()
@@ -189,7 +192,11 @@ class uiMainWindow(QMainWindow):
 		if moved:
 			self.img_slider_old = value
 			_, tif = self.tifs.current()
-			tif.draw_into(self.img_area)
+
+			self.draw_area.clear()
+			self.draw_area.push(tif.to_QPixmap())
+			self.draw_area.paint()
+			self.img_area.setWidget(self.draw_area)
 
 	def draw_histogram(self):
 		if self.tifs:
@@ -222,7 +229,7 @@ class uiMainWindow(QMainWindow):
 		
 		self.img_slider.setEnabled(True)
 		self.img_slider.setValue(0)
-		self.img_slider.setMaximum( size*step )
+		self.img_slider.setMaximum( (size-1)*step )
 		self.img_slider.setSingleStep(step)
 		self.img_slider.setTickInterval(step)
 		self.img_slider.setTickPosition(QSlider.TicksBelow)
@@ -230,9 +237,13 @@ class uiMainWindow(QMainWindow):
 		# Reset the "old position" of the current slider.
 		self.img_slider_old = 0
 		
-		# The `draw_into()` function should disapear soon.
 		_, tif = self.tifs.current()
-		tif.draw_into(self.img_area)
+
+		print(self.img_area.widget())
+
+		self.draw_area.clear()
+		self.draw_area.push(tif.to_QPixmap())
+		self.draw_area.paint()
 
 	###### Interface ######
 	def build_left_vbox(self):
@@ -257,9 +268,18 @@ class uiMainWindow(QMainWindow):
 
 		return vbox
 
+	def build_right_vbox(self):
+		button = QPushButton("Try")
+		#button.triggered.connect()
+
+		vbox = QVBoxLayout()
+		vbox.addWidget(button)
+		return vbox
+
 	def build_grid(self):
 		grid = QGridLayout()
 		grid.addLayout(self.build_left_vbox(), 0, 0)
+		grid.addLayout(self.build_right_vbox(), 0, 1)
 		return grid
 
 	def build_main_widget(self):
@@ -322,6 +342,9 @@ class uiMainWindow(QMainWindow):
 		self.setMinimumSize(self.width, self.height)
 		self.build_menu()
 		self.setCentralWidget(self.build_main_widget())
+
+		self.draw_area = RenderArea(self.img_area)
+		self.img_area.setWidget(self.draw_area)
 
 		###### need a rework
 		## Process Gdal button
