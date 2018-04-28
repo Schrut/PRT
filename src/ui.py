@@ -148,29 +148,48 @@ class uiMainWindow(QMainWindow):
 
 	##### SIGNALS #####
 	def img_slider_moved(self, value):
-		move = 0
-		step = self.img_slider.singleStep()
-		old = self.img_slider_old
+		"""When slider's value has changed, do something:
 
-		# Check if we have to move left or right.
-		if value >= (old + step):   move = 2 # Right
-		elif value <= (old - step): move = 1 # Left
+			if previous value + step >= current value
+				move right
+			else
+			if previous value - step <= current value
+				move left
+
+			If user move the slider to fast, it's possible that
+			the distance between the old and the current value is
+			superior to the `step` value. 
+			In this case, we need to call the `active()` function.
 		
-		# move values:
-		# -> 0: nothing to do.
-		# -> 1: shift the list to the left, draw the new image.
-		# -> 2: shift the lsit to the right, draw the new image.
-		if move > 0:
-			if move is 2:
-				self.tifs.shift_right()
-			elif move is 1:
+		Arguments:
+			value {integer} -- current integer value of the slider.
+		"""
+
+		moved = False
+		step = self.img_slider.singleStep()
+		old = self.img_slider_old # previous value
+
+		l_new = old-step # new possible left value
+		r_new = old+step # new possible right value
+
+		if value <= l_new:
+			moved = True
+			if value is l_new:
 				self.tifs.shift_left()
-			
+			else:
+				self.tifs.active(int(value/step))
+		
+		elif value >= r_new:
+			moved = True
+			if value is r_new:
+				self.tifs.shift_right()
+			else:
+				self.tifs.active(int(value/step))
+
+		if moved:
 			self.img_slider_old = value
-			
 			_, tif = self.tifs.current()
 			tif.draw_into(self.img_area)
-
 
 	def draw_histogram(self):
 		if self.tifs:
