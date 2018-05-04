@@ -2,11 +2,22 @@
 Image module
 """
 
-import os
-import numpy as np
+from os import (
+    path,
+    makedirs,
+)
+from time import time
+from numpy import ( 
+    uint8, 
+    histogram,
+)
 
-import tifffile
+from cv2 import (
+    VideoWriter, 
+    VideoWriter_fourcc,
+)
 
+from tifffile import imread
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import (
     QImage, 
@@ -123,6 +134,69 @@ class TiffSequence():
         self.img_curr = self.img_next
         self.set_nextone(self.img_curr[0])
 
+    def as_video(self, pathname: str):
+        if self.img_number is 0:
+            print("Warning: no images into this TiffSequence.")
+            print("Warning: cannot build a video from this image sequence.")
+            return
+
+        # Path security check
+        if not path.exists(pathname):
+            makedirs(pathname)
+
+        # Save the current active image from the sequence.
+        old = self.current()[0]
+
+        # Now reset to 0
+        self.active(0)
+
+        # The whole video will have the same shape than
+        # the first sequence image.
+        idx, tif = self.current()
+        _h, _w = tif.shape()
+
+        # video name, based on the current timestamp.
+        # output format is '.MKV'
+        vname = pathname+str( time() )+".mkv"
+        
+        # Create a VideoWirter:
+        # encoded using HFYU (Huffman Lossless Codec)
+        # 25 frames/sec
+        # Size( width, height )
+        # False -> no color images.
+        video = VideoWriter(
+            vname, 
+            VideoWriter_fourcc('H','F','Y','U'), 
+            25.0, 
+            (_w, _h), 
+            False
+        )
+
+        # If the VideoWriter creation failed, exit.
+        # e.g.:
+        # HFYU codec is not present at runtime on the machine.
+        if video.isOpened() is False:
+            print("Video failed to build.")
+            return
+        
+        # Remember that we alreay read the first sequence image.
+        # During the process, 16-bits greyscale images
+        # are converted to 8-bits.
+        video.write( tif.to_8bits() )
+        
+        # Read the complete sequence.
+        while idx is not self.img_number-1:
+            self.shift_right()
+            idx, tif = self.current()
+            video.write( tif.to_8bits() )
+
+        # Close the VideoWriter
+        video.release()
+
+        # Put back the sequence in the way
+        # it was before building video.
+        self.active(old)
+
 
 class Tiff():
     """The Tiff class, represents a TIFF image in memory.
@@ -137,7 +211,7 @@ class Tiff():
     pname = ""
     source = None
 
-    def __init__(self, pathname):
+    def __init__(self, pathname: str):
         """The Tiff class constructor.
 
         Arguments:
@@ -147,7 +221,7 @@ class Tiff():
             if self.load_from(pathname) is False:
                 print("[FAILED]\nError while reading: image doesn't exists.")
             else:
-                self.name = os.path.basename(pathname)
+                self.name = path.basename(pathname)
                 self.pname = pathname
         else:
             print("[FAILED]\npathname doesn't contains TIFF extension.")
@@ -161,10 +235,10 @@ class Tiff():
         Returns:
             boolean -- True if image found.
         """
-        if not os.path.exists(pathname):
+        if not path.exists(pathname):
             return False
         
-        self.source = tifffile.imread(pathname)
+        self.source = imread(pathname)
         return True
 
     def size(self):
@@ -179,7 +253,7 @@ class Tiff():
         Returns:
             histogram, bin_edges
         """
-        return np.histogram(self.source.ravel(), bins='auto')
+        return histogram(self.source.ravel(), bins='auto')
 
     def normalization(self, _min, _max):
         """
@@ -200,7 +274,7 @@ class Tiff():
             numpy.ndarray (dtype=uint8)
         """
         img = self.normalization(0, 255)
-        return img.astype(np.uint8)
+        return img.astype(uint8)
 
 
     def to_QImage(self):
