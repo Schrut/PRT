@@ -153,6 +153,7 @@ class TiffSequence():
         # The whole video will have the same shape than
         # the first sequence image.
         idx, tif = self.current()
+        _h, _w = tif.shape()
 
         # video name, based on the current timestamp.
         # output format is '.MKV'
@@ -167,7 +168,7 @@ class TiffSequence():
             vname, 
             VideoWriter_fourcc('H','F','Y','U'), 
             25.0, 
-            tif.shape(), 
+            (_w, _h), 
             False
         )
 
