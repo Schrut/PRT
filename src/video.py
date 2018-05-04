@@ -1,3 +1,9 @@
+from img import TiffSequence
+
+class Video():
+    def __init__(self, sequence: :):
+
+
 """
 
 TODO

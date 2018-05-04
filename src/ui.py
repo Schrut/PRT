@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QScrollArea,
     QPushButton,
+    QRadioButton,
     QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
@@ -242,6 +243,21 @@ class uiMainWindow(QMainWindow):
 		self.img_area.push(tif.to_QImage())
 		self.img_area.update()
 
+	def gdal_transform(self):
+		print("GDAL")
+		"""TODO
+
+		Application d'une transformation GDAL à l'ensemble de la séquence d'image Tiff.
+		Sauvegarer l'ancienne séquence d'images (images source) pour permettre de switch quand l'utilisateur le veut.
+
+		Un bouton pour appliquer GDAL à l'ensemble de la séquence,
+		puis un bouton pour savoir si l'utilisateur veut oui ou non afficher l'application de GDAL sur l'image.
+
+		Donc deux actions différentes:
+			on transforme une première (et seule) fois
+			on affiche oui ou non
+		"""
+
 	###### Interface ######
 	def build_left_vbox(self):
 		# Where we are going to draw images
@@ -268,10 +284,17 @@ class uiMainWindow(QMainWindow):
 		return vbox
 
 	def build_right_vbox(self):
-		button = QPushButton("Try")
-		#button.triggered.connect() #TODO
+		label = QLabel("Applies GDAL transform to the sequence")
+		label.setLineWidth(self.width*1/9)
+		label.width = self.width*1/8
+		label.setAlignment(Qt.AlignCenter)
+
+		button = QPushButton("Applies")
+		button.width = self.width*1/12
+		button.toggled.connect(self.gdal_transform)
 
 		vbox = QVBoxLayout()
+		vbox.addWidget(label)
 		vbox.addWidget(button)
 		return vbox
 
@@ -311,6 +334,12 @@ class uiMainWindow(QMainWindow):
 		action.triggered.connect(self.draw_histogram)
 		return action
 
+	def action_gdal(self):
+		action = QAction("GDAL", self)
+		action.setShortcut("Ctrl+G")
+		action.triggered.connect(self.gdal_transform)
+		return action
+
 	def menu_file(self):
 		menu = QMenu("File", self.menuBar())
 		menu.addAction(self.action_load_tiffs())
@@ -321,6 +350,7 @@ class uiMainWindow(QMainWindow):
 	def menu_process(self):
 		menu = QMenu("Process", self.menuBar())
 		menu.addAction(self.action_draw_histogram())
+		menu.addAction(self.action_gdal())
 		return menu
 	
 	def menu_about(self):
