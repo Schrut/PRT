@@ -3,7 +3,6 @@ Image module
 """
 
 import os
-import shutil
 import numpy as np
 
 import tifffile
@@ -222,18 +221,3 @@ class Tiff():
             QPixmap -- https://doc.qt.io/qt-5/qpixmap.html
         """
         return QPixmap.fromImage(self.to_QImage())
-
-
-    def draw_into(self, w: QWidget):
-        """Draw tiff image (QPixmap here) into a widget.
-
-        Arguments:
-            w {QWidget} -- the widget in which you want do draw tiff into.
-        """
-        area = RenderArea()
-
-        area.push(self.to_QPixmap())
-        #area.push(QPixmap('france.png'), 1.0, 50, 50)
-        area.paint()
-
-        w.setWidget(area)
