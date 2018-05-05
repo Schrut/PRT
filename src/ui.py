@@ -76,63 +76,6 @@ https://opensource.org/licenses/MIT</a>"
 	def on_click(self):
 		self.information(self.parent, self.title, self.license, QMessageBox.Ok)
 
-
-class uiGdal(QMainWindow):
-	def __init__(self, parent):
-		super().__init__(parent)
-		self.parent = parent
-		
-	"""
-	Here the GDAL happen.
-	In two steps : 
-		-Translate which will geolocate the image
-		-Warp will scaled the image
-	"""
-
-	"""
-	GDAL doit charger toute la séquence et la transformer pour pouvoir ouvrir une séquence géoloc et OK pour l'affichage.
-	"""
-	def on_click(self):
-		"""
-		#
-		# TODO:
-		#	Total rework with the tiff sequence needed
-
-		#Pick the current image pathname
-		pathname_in = self.parent.curr_tiff.pname
-		
-		#Take only the basename/file name
-		pathname_out = os.path.basename(pathname_in)
-
-		#Define the pathname for the output
-		pathname_out = '../GDAL/Translate/' + pathname_out[:-4] + '_geos_translate.tif'
-
-		#Create a GDAL folder if necessary
-		if os.path.exists('../GDAL/Translate/') is False:
-			os.makedirs('../GDAL/Translate')
-
-		#The actual GDAL transformation
-		os.system('gdal_translate -srcwin 0, 0, 958, 570 -a_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0" -a_ullr -1025637.42, 4614118.21, -67509.04, 4044041.83 ' + pathname_in + ' ' + pathname_out)
-		
-		#Drawing the Image
-		tiff = Tiff(pathname_out)
-		tiff.draw_into(self.parent.centralWidget())
-		self.parent.curr_tiff = tiff
-
-
-		#Same thing here, but this time we warp the image
-		pathname_in = self.parent.curr_tiff.pname
-		pathname_out = os.path.basename(pathname_in)
-		pathname_out = '../GDAL/Warp/' + pathname_out[:-4] + '_mercator_warp.tif'
-		if os.path.exists('../GDAL/Warp/') is False:
-			os.makedirs('../GDAL/Warp/')
-		os.system('gdalwarp -ts 1916, 1140 -s_srs "+proj=geos +a=6378169.0 +b=6356583.8 +lon_0=9.5 +h=35785831.0 +x_0=0 +y_0=0 +pm=0 +ulx=-1025637.42 +uly=4614118.21 +lrx=-67509.04 +lry=4044041.83" -t_srs  "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" ' + pathname_in + ' ' + pathname_out)
-		tiff = Tiff(pathname_out)
-		tiff.draw_into(self.parent.centralWidget())
-		self.parent.curr_tiff = tiff
-		"""
-
-
 """
 User Interface Main Window
 """
@@ -254,18 +197,6 @@ class uiMainWindow(QMainWindow):
 
 	def gdal_transform(self):
 		print("GDAL")
-		"""TODO
-
-		Application d'une transformation GDAL à l'ensemble de la séquence d'image Tiff.
-		Sauvegarer l'ancienne séquence d'images (images source) pour permettre de switch quand l'utilisateur le veut.
-
-		Un bouton pour appliquer GDAL à l'ensemble de la séquence,
-		puis un bouton pour savoir si l'utilisateur veut oui ou non afficher l'application de GDAL sur l'image.
-
-		Donc deux actions différentes:
-			on transforme une première (et seule) fois
-			on affiche oui ou non
-		"""
 
 	###### Interface ######
 	def build_left_vbox(self):

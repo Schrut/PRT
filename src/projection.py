@@ -61,7 +61,9 @@ class PixelZone():
         self.left = left
         self.right = right
 
-def gdal_translate(tif: Tiff, out_path: str, hrv: HRVpicture, sat: Satellite, zone: PixelZone):
+def gdal_translate(tif: Tiff, out_path: str, hrv: HRVpicture, 
+    sat: Satellite, zone: PixelZone):
+
     r_equatorial = 6378169.0
     r_polar = 6356583.8
 
@@ -89,3 +91,39 @@ def gdal_translate(tif: Tiff, out_path: str, hrv: HRVpicture, sat: Satellite, zo
     )
 
     gdal.Translate(out_path+tif.name, tif.pname, options=opt)
+
+def gdal_warp(tif: Tiff, out_shape: (int, int), out_path: str, 
+    hrv: HRVpicture, sat: Satellite, zone: PixelZone):
+    """Proceed to a gdal mercator warp.
+    """
+
+    r_equatorial = 6378169.0
+    r_polar = 6356583.8
+
+    if not path.exists(out_path):
+        makedirs(out_path)
+
+    xleft = -hrv.psize * (zone.left - hrv.origin)
+    ytop = hrv.psize * (zone.top - hrv.origin)
+    xright = -hrv.psize * (zone.right - 1 - hrv.origin)
+    ybot = hrv.psize * (zone.bot - 1 - hrv.origin)
+
+    opt = gdal.WarpOptions(
+        width=out_shape[0],
+        height=out_shape[1],
+        srcSRS="+proj=geos"
+        +" +a="+str(r_equatorial)
+        +" +b="+str(r_polar)
+        +" +lat_0="+str(sat.lat)
+        +" +lon_0="+str(sat.lon)
+        +" +h="+str(sat.height)
+        +" +x_0=0 +y_0=0 +pm=0"
+        +" +ulx="+str(xleft)
+        +" +uly="+str(ytop)
+        +" +lrx="+str(xright)
+        +" +lry="+str(ybot),
+        dstSRS="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+        multithread=True
+    )
+
+    gdal.Warp(out_path+tif.name, tif.pname, options=opt)
