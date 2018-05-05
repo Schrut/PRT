@@ -1,14 +1,14 @@
 import sys
-sys.path.insert(0, '../src/')
+sys.path.insert(0, '..')
 
 from img import TiffSequence
 
 # 4 images
 path = [
-    '../tif/20170407054917_MSG2.tif',
-    '../tif/20170407055416_MSG2.tif',
-    '../tif/20170407055916_MSG2.tif',
-    '../tif/20170407060416_MSG2.tif'
+    '../../tif/20170407054917_MSG2.tif',
+    '../../tif/20170407055416_MSG2.tif',
+    '../../tif/20170407055916_MSG2.tif',
+    '../../tif/20170407060416_MSG2.tif'
 ]
 
 sequence = TiffSequence(path)

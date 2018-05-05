@@ -1,16 +1,8 @@
-from osgeo import gdal
-
-import sys
 from os import path, makedirs
-import subprocess
-
-sys.path.insert(0, '..')
-from img import Tiff, TiffSequence
-
-#from ..img import Tiff, TiffSequence
+from osgeo import gdal
+from img import Tiff
 
 """
-
 # HRV (High Resolution Visible) pictures, as pixels:
 hrv_w = 11136
 hrv_h = 11136
@@ -35,9 +27,7 @@ sat_h = 35785831.0
 sat_lon = 9.5
 """ 
 
-
-
-class HRV():
+class HRVpicture():
     width: int
     height: int
     psize: float
@@ -59,7 +49,7 @@ class Satellite():
         self.lon = lon
         self.lat = lat
 
-class Zone():
+class PixelZone():
     top: int
     bot: int
     left: int
@@ -71,12 +61,11 @@ class Zone():
         self.left = left
         self.right = right
 
-
-def gdal_translate(tif: Tiff, pname: str, hrv: HRV, sat: Satellite, zone: Zone):
+def gdal_translate(tif: Tiff, out_path: str, hrv: HRVpicture, sat: Satellite, zone: PixelZone):
     r_equatorial = 6378169.0
     r_polar = 6356583.8
 
-    ## ??
+    ## why??
     xleft = -hrv.psize * (zone.left - hrv.origin)
     ytop = hrv.psize * (zone.top - hrv.origin)
     xright = -hrv.psize * (zone.right - 1 - hrv.origin)
@@ -84,19 +73,19 @@ def gdal_translate(tif: Tiff, pname: str, hrv: HRV, sat: Satellite, zone: Zone):
 
     _h, _w = tif.shape()
 
-    if not path.exists(pname):
-        makedirs(pname)
+    if not path.exists(out_path):
+        makedirs(out_path)
 
     opt = gdal.TranslateOptions(
         srcWin=[0, 0, _w, _h],
         outputBounds=[xleft, ytop, xright, ybot],
         outputSRS="+proj=geos"
-            +" +a="+str(r_equatorial)
-            +" +b="+str(r_polar)
-            +" +lat_0="+str(sat.lat)
-            +" +lon_0="+str(sat.lon)
-            +" +h="+str(sat.height)
-            +" +x_0=0 +y_0=0 +pm=0",
+        +" +a="+str(r_equatorial)
+        +" +b="+str(r_polar)
+        +" +lat_0="+str(sat.lat)
+        +" +lon_0="+str(sat.lon)
+        +" +h="+str(sat.height)
+        +" +x_0=0 +y_0=0 +pm=0",
     )
 
-    gdal.Translate(pname+tif.name, tif.pname, options=opt)
+    gdal.Translate(out_path+tif.name, tif.pname, options=opt)
