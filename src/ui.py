@@ -137,10 +137,10 @@ class uiGdal(QMainWindow):
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	img_area: RenderArea
-	tifs: TiffSequence
-	img_slider: QSlider
-	img_slider_old: int
+	img_area: RenderArea = None
+	tifs: TiffSequence = None
+	img_slider: QSlider = None
+	img_slider_old: int = 0
 
 	def __init__(self, screen):
 		super().__init__()
@@ -200,9 +200,11 @@ class uiMainWindow(QMainWindow):
 			self.img_area.update()
 			
 	def draw_histogram(self):
-		if self.tifs:
-			_, tif = self.tifs.current()
-			Histogram(self, tif.source, tif.name)
+		if self.tifs is None:
+			return
+		
+		_, tif = self.tifs.current()
+		Histogram(self, tif.source, tif.name)
 
 	def load_tiffs(self):
 		"""Load multiples tiffs into memory
@@ -242,6 +244,13 @@ class uiMainWindow(QMainWindow):
 		self.img_area.clear()
 		self.img_area.push(tif.to_QImage())
 		self.img_area.update()
+
+	def sequence_as_video(self):
+		if self.tifs is None:
+			return
+		
+		# for the moment, default path to video
+		self.tifs.as_video("../video/")
 
 	def gdal_transform(self):
 		print("GDAL")
@@ -317,9 +326,14 @@ class uiMainWindow(QMainWindow):
 		return action
 
 	def action_load_tiffs(self):
-		action = QAction("Open Tiffs", self)
+		action = QAction("Open tiffs", self)
 		action.setShortcut("Ctrl+O")
 		action.triggered.connect(self.load_tiffs)
+		return action
+
+	def action_as_video(self):
+		action = QAction("Save as video", self)
+		action.triggered.connect(self.sequence_as_video)
 		return action
 
 	def action_show_license(self):
@@ -343,6 +357,7 @@ class uiMainWindow(QMainWindow):
 	def menu_file(self):
 		menu = QMenu("File", self.menuBar())
 		menu.addAction(self.action_load_tiffs())
+		menu.addAction(self.action_as_video())
 		menu.addSeparator()
 		menu.addAction(self.action_close())
 		return menu
