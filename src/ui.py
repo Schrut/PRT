@@ -4,16 +4,20 @@ PyQt5 QtWidgets
 User Interface classes.
 """
 from PyQt5.QtWidgets import (
+    QRadioButton,
     QMainWindow,
     QFileDialog,
     QMessageBox,
     QScrollArea,
+    QSizePolicy,
     QPushButton,
-    QRadioButton,
     QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
+    QGroupBox,
+    QCheckBox,
     QMenuBar,
+    QToolTip,
     QWidget,
     QAction,
     QWidget,
@@ -84,15 +88,21 @@ class uiMainWindow(QMainWindow):
 	tifs: TiffSequence = None
 	img_slider: QSlider = None
 	img_slider_old: int = 0
+	s_area: QScrollArea = None
 
 	def __init__(self, screen):
 		super().__init__()
 		self.title = "PRT"
-		self.width = 1080
-		self.height = 720
-		self.left = (screen.size().width() - self.width) / 2
-		self.top = (screen.size().height() - self.height) / 2
+		self.screen = screen
+		self.resize_and_center(600, 400)
 		self.build()
+
+	def resize_and_center(self, w, h):
+		self.left = (self.screen.size().width() - w) / 2
+		self.top = (self.screen.size().height() - h) / 2
+		self.width = w
+		self.height = h
+		self.setGeometry(self.left, self.top, self.width, self.height)
 
 	##### SIGNALS #####
 	def img_slider_moved(self, value):
@@ -183,10 +193,20 @@ class uiMainWindow(QMainWindow):
 		# Reset the "old position" of the current slider.
 		self.img_slider_old = 0
 		_, tif = self.tifs.current()
-
+		_h, _w = tif.shape()
+		
+		# Draw new image
 		self.img_area.clear()
 		self.img_area.push(tif.to_QImage())
 		self.img_area.update()
+
+		# Fix maximum size of the scroll area
+		self.s_area.setMaximumSize(_w+2, _h+2)
+		
+		# New size of the window
+		new_h = _h+2 + self.menuBar().height() + self.img_slider.height() + 30
+		new_w = _w+2 + self.centralWidget().layout().itemAt(1).geometry().width() + 25
+		self.resize_and_center(new_w, new_h)
 
 	def sequence_as_video(self):
 		if self.tifs is None:
@@ -218,24 +238,34 @@ class uiMainWindow(QMainWindow):
 		vbox.addWidget(slider)
 
 		# Usefull attributes
+		self.s_area = s_area
 		self.img_area = r_area
 		self.img_slider = slider
 
 		return vbox
 
 	def build_right_vbox(self):
-		label = QLabel("Applies GDAL transform to the sequence")
-		label.setLineWidth(self.width*1/9)
-		label.width = self.width*1/8
-		label.setAlignment(Qt.AlignCenter)
+		box_gdal = QCheckBox("GDAL projection")
+		box_gdal.setToolTip("Display new projected tif images.")
+		box_gdal.setEnabled(False)
 
-		button = QPushButton("Applies")
-		button.width = self.width*1/12
-		button.toggled.connect(self.gdal_transform)
+		box_osm = QCheckBox("OSM tile")
+		box_osm.setToolTip("Download an OpenStreetMap tile from web API.")
+
+		gvbox = QVBoxLayout()
+		gvbox.addWidget(box_gdal)
+		gvbox.addWidget(box_osm)
+
+		gbox = QGroupBox("Display options")
+		gbox.setLayout(gvbox)
+		gbox.setMaximumHeight(100)
+
+		gbox2 = QGroupBox("Other options?")
 
 		vbox = QVBoxLayout()
-		vbox.addWidget(label)
-		vbox.addWidget(button)
+		vbox.addWidget(gbox)
+		vbox.addWidget(gbox2)
+		
 		return vbox
 
 	def build_grid(self):
@@ -313,14 +343,6 @@ class uiMainWindow(QMainWindow):
 	###### BUILD ALL ######
 	def build(self):
 		self.setWindowTitle(self.title)
-		self.setGeometry(self.left, self.top, self.width, self.height)
 		self.setMinimumSize(self.width, self.height)
 		self.build_menu()
 		self.setCentralWidget(self.build_main_widget())
-
-		###### need a rework
-		## Process Gdal button
-		#button_process_gdal = QAction("Gdal", self)
-		#button_process_gdal.setShortcut("Ctrl+G")
-		#button_process_gdal.setStatusTip("Gdal - Geoloc")
-		#button_process_gdal.triggered.connect(uiGdal(self).on_click)

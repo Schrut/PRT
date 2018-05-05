@@ -123,6 +123,7 @@ def gdal_warp(tif: Tiff, out_shape: (int, int), out_path: str,
         +" +lrx="+str(xright)
         +" +lry="+str(ybot),
         dstSRS="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+        resampleAlg=gdal.GRIORA_Bilinear,
         multithread=True
     )
 
