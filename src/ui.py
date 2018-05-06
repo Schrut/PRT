@@ -3,6 +3,9 @@ PyQt5 QtWidgets
 
 User Interface classes.
 """
+
+from multiprocessing import Process
+
 from PyQt5.QtWidgets import (
     QRadioButton,
     QMainWindow,
@@ -84,12 +87,16 @@ https://opensource.org/licenses/MIT</a>"
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	img_area: RenderArea = None
 	tifs: TiffSequence = None
-	img_slider: QSlider = None
-	img_slider_old: int = 0
-	s_area: QScrollArea = None
 
+	s_area: QScrollArea = None
+	img_area: RenderArea = None
+	img_slider: QSlider = None
+
+	img_slider_old: int = 0
+
+	box_gdal: QCheckBox = None
+	
 	def __init__(self, screen):
 		super().__init__()
 		self.title = "PRT"
@@ -171,6 +178,9 @@ class uiMainWindow(QMainWindow):
 
 		if not fnames:
 			return
+		
+		# Disable the GDAL display option
+		self.box_gdal.setEnabled(False)
 
 		# Save the new sequence
 		self.tifs = TiffSequence(fnames)
@@ -212,11 +222,24 @@ class uiMainWindow(QMainWindow):
 		if self.tifs is None:
 			return
 		
-		# for the moment, default path to video
-		self.tifs.as_video("../video/")
+		# for the moment, default path to video is:
+		# TODO: make user choose where he wants to save the video.
+		video_path = "../video/"
 
-	def gdal_transform(self):
-		print("GDAL")
+		# non-blocking io operation.
+		Process(
+			target=self.tifs.as_video, 
+			args=(video_path,),
+			daemon=True
+		).start()
+
+	def gdal_projection(self):
+		print("GDAL projection")
+		self.box_gdal.setEnabled(True)
+
+	def display_gdal(self, checked: bool):
+		if checked:
+			print("display GDAL")
 
 	###### Interface ######
 	def build_left_vbox(self):
@@ -248,6 +271,7 @@ class uiMainWindow(QMainWindow):
 		box_gdal = QCheckBox("GDAL projection")
 		box_gdal.setToolTip("Display new projected tif images.")
 		box_gdal.setEnabled(False)
+		box_gdal.toggled.connect(self.display_gdal)
 
 		box_osm = QCheckBox("OSM tile")
 		box_osm.setToolTip("Download an OpenStreetMap tile from web API.")
@@ -265,6 +289,8 @@ class uiMainWindow(QMainWindow):
 		vbox = QVBoxLayout()
 		vbox.addWidget(gbox)
 		vbox.addWidget(gbox2)
+
+		self.box_gdal = box_gdal
 		
 		return vbox
 
@@ -312,7 +338,7 @@ class uiMainWindow(QMainWindow):
 	def action_gdal(self):
 		action = QAction("GDAL", self)
 		action.setShortcut("Ctrl+G")
-		action.triggered.connect(self.gdal_transform)
+		action.triggered.connect(self.gdal_projection)
 		return action
 
 	def menu_file(self):
