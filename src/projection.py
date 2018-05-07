@@ -108,6 +108,8 @@ def gdal_warp(tif: Tiff, out_shape: (int, int), out_path: str,
     xright = -hrv.psize * (zone.right - 1 - hrv.origin)
     ybot = hrv.psize * (zone.bot - 1 - hrv.origin)
 
+    print( xleft, ytop, xright, ybot )
+
     opt = gdal.WarpOptions(
         width=out_shape[0],
         height=out_shape[1],

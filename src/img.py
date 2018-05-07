@@ -43,6 +43,13 @@ class TiffSequence():
     def nextone(self):
         return self.img_next
 
+    def clear(self):
+        self.img_next = None
+        self.img_prev = None
+        self.img_next = None
+        self.img_number = 0
+        self.paths = []
+
     def set_previous(self, index):
         """Set previous neighbour
 

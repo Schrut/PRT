@@ -30,6 +30,7 @@ from PyQt5.QtWidgets import (
 )
 
 from PyQt5.QtGui import (
+	QImage,
     QPainter,
     QColor,
     QPen,
@@ -44,10 +45,19 @@ import os
 import numpy as np
 import cv2
 
+import smopy
+
 from draw import RenderArea
 from img import Tiff, TiffSequence
 
 from histogram import Histogram
+from projection import (
+	HRVpicture, 
+	Satellite, 
+	PixelZone, 
+	gdal_translate, 
+	gdal_warp,
+)
 
 import smopy
 
@@ -88,6 +98,8 @@ User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
 	tifs: TiffSequence = None
+	tifs_gdal: TiffSequence = None
+	do_show_gdal = False
 
 	s_area: QScrollArea = None
 	img_area: RenderArea = None
@@ -137,26 +149,51 @@ class uiMainWindow(QMainWindow):
 		l_new = old-step # new possible left value
 		r_new = old+step # new possible right value
 
+		tifs: TiffSequence = None
+		if self.do_show_gdal:
+			tifs = self.tifs_gdal
+		else:
+			tifs = self.tifs
+
 		if value <= l_new:
 			moved = True
 			if value is l_new:
-				self.tifs.shift_left()
+				tifs.shift_left()
 			else:
-				self.tifs.active(int(value/step))
+				tifs.active(int(value/step))
 		
 		elif value >= r_new:
 			moved = True
 			if value is r_new:
-				self.tifs.shift_right()
+				tifs.shift_right()
 			else:
-				self.tifs.active(int(value/step))
+				tifs.active(int(value/step))
 
 		if moved:
 			self.img_slider_old = value
-			_, tif = self.tifs.current()
+			_, tif = tifs.current()
+
+			_map = smopy.Map((
+				51.5855835, 
+				-6.5710541, 
+				42.0220060, 
+				8.6532580
+			), z=6)
+
+			_map.save_png('../france.png')
 
 			self.img_area.clear()
-			self.img_area.push(tif.to_QImage())
+			_h, _w = tif.shape()
+
+			map_img = QImage('../france.png')
+
+
+			self.img_area.push(
+				tif.to_QImage().smoothScaled(_w, _h),
+				opacity=0.8
+			)
+			self.img_area.push(map_img, opacity=1.0)
+			
 			self.img_area.update()
 			
 	def draw_histogram(self):
@@ -181,6 +218,7 @@ class uiMainWindow(QMainWindow):
 		
 		# Disable the GDAL display option
 		self.box_gdal.setEnabled(False)
+		self.box_gdal.setChecked(False)
 
 		# Save the new sequence
 		self.tifs = TiffSequence(fnames)
@@ -203,6 +241,7 @@ class uiMainWindow(QMainWindow):
 		# Reset the "old position" of the current slider.
 		self.img_slider_old = 0
 		_, tif = self.tifs.current()
+		
 		_h, _w = tif.shape()
 		
 		# Draw new image
@@ -235,11 +274,49 @@ class uiMainWindow(QMainWindow):
 
 	def gdal_projection(self):
 		print("GDAL projection")
+
+		tr_o_path = "../.cache/gdal/translate/"
+		wr_o_path = "../.cache/gdal/warp/"
+
+		hrv = HRVpicture(11136, 11136, 1000.134, 5565.5)
+		france = PixelZone(10179, 9610, 6591, 5634)
+		meteosat9 = Satellite(35785831.0, 9.5, 0.0)
+
+		old = self.tifs.current()[0]
+		self.tifs.active(0)
+
+		self.tifs_gdal = TiffSequence([])
+
+		idx, tif = self.tifs.current()
+		while idx is not self.tifs.img_number-1:
+			gdal_translate(tif, tr_o_path, hrv, meteosat9, france)
+			tif_tr = Tiff(tr_o_path+tif.name)
+			gdal_warp(tif_tr, (1916, 1140), wr_o_path, hrv, meteosat9, france)
+			
+			self.tifs_gdal.paths.append(wr_o_path+tif.name)
+			self.tifs_gdal.img_number += 1
+
+			self.tifs.shift_right()
+			idx, tif = self.tifs.current()
+
+		self.tifs_gdal.active(0)
+		self.tifs.active(old)
+		
+		self.do_show_gdal = False
 		self.box_gdal.setEnabled(True)
 
 	def display_gdal(self, checked: bool):
 		if checked:
-			print("display GDAL")
+			self.do_show_gdal = True
+			self.tifs_gdal.active(
+				self.tifs.current()[0]
+			)
+
+		else:
+			self.do_show_gdal = False
+			self.tifs.active(
+				self.tifs_gdal.current()[0]
+			)
 
 	###### Interface ######
 	def build_left_vbox(self):
