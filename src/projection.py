@@ -117,7 +117,7 @@ def gdal_proj_mercator(
         +" +lry="+str(yb),
         dstSRS="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
         resampleAlg=gdal.GRIORA_Bilinear,
-        multithread=True
+        multithread=True,
     )
 
     # Proceed to mercator projection :

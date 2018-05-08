@@ -1,0 +1,13 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">202</MDI>
+      <MDI key="STATISTICS_MEAN">68.041091215674</MDI>
+      <MDI key="STATISTICS_MINIMUM">53</MDI>
+      <MDI key="STATISTICS_STDDEV">11.391063207044</MDI>
+      <MDI key="U-MARF_MSG_Level1.5_DATA_Channel_12_IMAGE_DATA_CLASS">IMAGE</MDI>
+      <MDI key="U-MARF_MSG_Level1.5_DATA_Channel_12_IMAGE_DATA_IMAGE_SUBCLASS">IMAGE_U16BIT</MDI>
+      <MDI key="U-MARF_MSG_Level1.5_DATA_Channel_12_IMAGE_DATA_IMAGE_VERSION">1.2</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

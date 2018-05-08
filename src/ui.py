@@ -286,7 +286,7 @@ class uiMainWindow(QMainWindow):
 				gdal_proj_mercator(
 					pathname,
 					_w, _h,
-					_w, _h,
+					1916, 1140,
 					hrv,
 					meteosat9, 
 					france
@@ -327,6 +327,7 @@ class uiMainWindow(QMainWindow):
 			self.img_area.clear()
 			self.img_area.push(tif.to_QImage())
 			self.img_area.update()
+			self.sbox_gdal.setValue(1.0)
 
 		else:
 			self.do_show_gdal = False
@@ -346,7 +347,7 @@ class uiMainWindow(QMainWindow):
 	def display_osm(self, checked: bool):
 		if checked:
 			_, tif = self.tifs_gdal.current()
-			
+
 			# Download a tile from OpenStreetMap with the latitudes & longitudes
 			# of corners top-left & bot-right
 			src = gdal.Open(tif.pname)
@@ -357,12 +358,21 @@ class uiMainWindow(QMainWindow):
 			_map = smopy.Map((uly, ulx, lry, lrx), z=6)
 			_map.save_png("../.cache/map.png")
 
-			# Now add it to the RenderArea
-			info = self.img_area.pop()
-			self.img_area.push(QImage("../.cache/map.png"))
-			self.img_area.push(info[0], 0.8, info[2], info[3])
-			self.img_area.update()
+			x, y = _map.to_pixels(51.5855835, -6.5710541)
+			xx, yy = _map.to_pixels(42.0220060, 8.6532580)
 
+			width = int((xx - x)+0.5)
+			height = int((yy - y)+0.5)
+
+			ax = _map.show_mpl(figsize=(8, 6))
+			ax.plot(x, y, 'or', ms=10, mew=2);
+
+			# Now add it to the RenderArea
+			qimage, opacity, _x, _y = self.img_area.pop()
+			qimage = qimage.smoothScaled( width, height )
+
+			self.img_area.push( QImage("../.cache/map.png") )
+			self.img_area.push( qimage, opacity, x, y+14) # +14 for visual correction
 			# Change SpinBox value too:
 			self.sbox_gdal.setValue(0.8)
 
@@ -371,8 +381,6 @@ class uiMainWindow(QMainWindow):
 			info = self.img_area.pop()
 			self.img_area.clear()
 			self.img_area.push(info[0], info[1], info[2], info[3])
-			self.img_area.update()
-
 			self.sbox_gdal.setValue(1.0)
 
 
@@ -403,7 +411,7 @@ class uiMainWindow(QMainWindow):
 		return vbox
 
 	def build_right_vbox(self):
-		box_gdal = QCheckBox("GDAL projection")
+		box_gdal = QCheckBox("Mercator projection")
 		box_gdal.setToolTip("Display new projected tif images.")
 		box_gdal.setEnabled(False)
 		box_gdal.toggled.connect(self.display_gdal)
@@ -438,7 +446,7 @@ class uiMainWindow(QMainWindow):
 		gbox = QGroupBox("Display options")
 		gbox.setLayout(gvbox)
 		gbox.setMaximumHeight(100)
-		gbox.setFixedWidth(self.width/3.5)
+		gbox.setFixedWidth(self.width/3.4)
 		gbox.setFixedHeight(self.height/3)
 
 		gbox2 = QGroupBox("Other options?")
