@@ -4,6 +4,7 @@ Image module
 
 from os import path, makedirs
 from time import time
+from osgeo import gdal
 from numpy import uint8, histogram
 from cv2 import VideoWriter, VideoWriter_fourcc
 from tifffile import imread
@@ -239,7 +240,7 @@ class Tiff():
 
     def shape(self):
         return self.source.shape
-
+    
     def histogram(self):
         """Calcul histogram of the tiff source.
         

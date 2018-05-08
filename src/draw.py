@@ -26,7 +26,7 @@ class RenderArea(QLabel):
     def pop(self):
         """ Pop last element from stack.
         """
-        self.images.pop()
+        return self.images.pop()
 
     def clear(self):
         """ Clear the stack.
@@ -41,7 +41,7 @@ class RenderArea(QLabel):
         
         Stack still has the same size after operation.
 
-        QLabel's size is equals to maximum width & heigth
+        QLabel's size is equals to maximum width & height
         found while reading images.
         
         Arguments:
@@ -52,30 +52,24 @@ class RenderArea(QLabel):
             return
 
         painter = QPainter(self)
-        images = self.images
 
-        max_w = 0
-        max_h = 0
+        max_h: int = 0
+        max_w: int = 0
 
-        poped = []
+        for image in self.images:
 
-        while images:
-            image, opacity, _x, _y = images.pop()
-            poped.append((image, opacity, _x, _y))
+            qimage, opacity, _x, _y = image
 
             painter.setOpacity(opacity)
-            painter.drawImage(_x, _y, image)
+            painter.drawImage(_x, _y, qimage)
 
-            _w = image.width()
-            _h = image.height()
+            _h = qimage.height()
+            _w = qimage.width()
 
-            if _w > max_w:
-                max_w = _w
-  
             if _h > max_h:
                 max_h = _h
-
-        while poped:
-            images.append(poped.pop())
+            
+            if _w > max_w:
+                max_w = _w
 
         self.setFixedSize(max_w, max_h)

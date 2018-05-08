@@ -1,31 +1,5 @@
 from os import path, makedirs
 from osgeo import gdal
-from img import Tiff
-
-"""
-# HRV (High Resolution Visible) pictures, as pixels:
-hrv_w = 11136
-hrv_h = 11136
-hrv_psize = 1000.134
-hrv_origin = 11136/2 ??
-
-# France coordinates (as pixels) into the HRV image:
-top = 10179
-bot = 9610
-left = 6591
-right = 5634
-
-# Pixels width of the source image:
-img_h = top - bot
-img_w = left - right
-
-# Earth radius as meters:
-r_equatorial = 6378169.0
-r_polar = 6356583.8
-
-sat_h = 35785831.0
-sat_lon = 9.5
-""" 
 
 class HRVpicture():
     width: int
@@ -39,6 +13,7 @@ class HRVpicture():
         self.psize = psize
         self.origin = origin
 
+
 class Satellite():
     height: float
     lon: float
@@ -48,6 +23,7 @@ class Satellite():
         self.height = height
         self.lon = lon
         self.lat = lat
+
 
 class PixelZone():
     top: int
@@ -61,26 +37,60 @@ class PixelZone():
         self.left = left
         self.right = right
 
-def gdal_translate(tif: Tiff, out_path: str, hrv: HRVpicture, 
-    sat: Satellite, zone: PixelZone):
 
+def gdal_proj_mercator(
+    pathname: str, 
+    in_w: int, 
+    in_h: int, 
+    out_w: int, 
+    out_h: int, 
+    hrv: HRVpicture, 
+    sat: Satellite, 
+    zone: PixelZone ):
+    """Proceed to a Mercator projection, thanks to GDAL.
+    
+    Arguments:
+        pathname {str} -- the pathname of the tiff you want to project.
+        in_w {int} -- width of the tiff file.
+        in_h {int} -- height of the tiff file.
+        out_w {int} -- width after projection.
+        out_h {int} -- height after projection.
+        hrv {HRVpicture} -- High Resolution Visible picture parameters.
+        sat {Satellite} -- Satellite parameters.
+        zone {PixelZone} -- A pixel zone from the HRV main picture. 
+    """
+
+    # Equatorial & Polar radius, in meters.
     r_equatorial = 6378169.0
     r_polar = 6356583.8
 
-    ## why??
-    xleft = -hrv.psize * (zone.left - hrv.origin)
-    ytop = hrv.psize * (zone.top - hrv.origin)
-    xright = -hrv.psize * (zone.right - 1 - hrv.origin)
-    ybot = hrv.psize * (zone.bot - 1 - hrv.origin)
+    # Actual corner latitude & longitude.
+    xl = -hrv.psize * (zone.left - hrv.origin)
+    yt = hrv.psize * (zone.top - hrv.origin)
+    xr = -hrv.psize * (zone.right - 1 - hrv.origin)
+    yb = hrv.psize * (zone.bot - 1 - hrv.origin)
 
-    _h, _w = tif.shape()
+    ## Check if the tiff pathname exists
+    if not path.exists(pathname):
+        print("ERROR: filename doesn't exists.")
 
-    if not path.exists(out_path):
-        makedirs(out_path)
+    # Save tiff's name
+    name = path.basename(pathname)
+    
+    # Save directories
+    tr_path = "../.cache/gdal/translate/"
+    wr_path = "../.cache/gdal/warp/"
 
-    opt = gdal.TranslateOptions(
-        srcWin=[0, 0, _w, _h],
-        outputBounds=[xleft, ytop, xright, ybot],
+    if not path.exists(tr_path):
+        makedirs(tr_path)
+    
+    if not path.exists(wr_path):
+        makedirs(wr_path)
+
+    # Translate options
+    opt_translate = gdal.TranslateOptions(
+        srcWin=[0, 0, in_w, in_h],
+        outputBounds=[xl, yt, xr, yb],
         outputSRS="+proj=geos"
         +" +a="+str(r_equatorial)
         +" +b="+str(r_polar)
@@ -90,29 +100,10 @@ def gdal_translate(tif: Tiff, out_path: str, hrv: HRVpicture,
         +" +x_0=0 +y_0=0 +pm=0",
     )
 
-    gdal.Translate(out_path+tif.name, tif.pname, options=opt)
-
-def gdal_warp(tif: Tiff, out_shape: (int, int), out_path: str, 
-    hrv: HRVpicture, sat: Satellite, zone: PixelZone):
-    """Proceed to a gdal mercator warp.
-    """
-
-    r_equatorial = 6378169.0
-    r_polar = 6356583.8
-
-    if not path.exists(out_path):
-        makedirs(out_path)
-
-    xleft = -hrv.psize * (zone.left - hrv.origin)
-    ytop = hrv.psize * (zone.top - hrv.origin)
-    xright = -hrv.psize * (zone.right - 1 - hrv.origin)
-    ybot = hrv.psize * (zone.bot - 1 - hrv.origin)
-
-    print( xleft, ytop, xright, ybot )
-
-    opt = gdal.WarpOptions(
-        width=out_shape[0],
-        height=out_shape[1],
+    # Warp options
+    opt_warp = gdal.WarpOptions(
+        width=out_w,
+        height=out_h,
         srcSRS="+proj=geos"
         +" +a="+str(r_equatorial)
         +" +b="+str(r_polar)
@@ -120,13 +111,17 @@ def gdal_warp(tif: Tiff, out_shape: (int, int), out_path: str,
         +" +lon_0="+str(sat.lon)
         +" +h="+str(sat.height)
         +" +x_0=0 +y_0=0 +pm=0"
-        +" +ulx="+str(xleft)
-        +" +uly="+str(ytop)
-        +" +lrx="+str(xright)
-        +" +lry="+str(ybot),
+        +" +ulx="+str(xl)
+        +" +uly="+str(yt)
+        +" +lrx="+str(xr)
+        +" +lry="+str(yb),
         dstSRS="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
         resampleAlg=gdal.GRIORA_Bilinear,
         multithread=True
     )
 
-    gdal.Warp(out_path+tif.name, tif.pname, options=opt)
+    # Proceed to mercator projection :
+    gdal.Translate(tr_path+name, pathname, options=opt_translate)
+    gdal.Warp(wr_path+name, tr_path+name, options=opt_warp)
+
+    return wr_path+name

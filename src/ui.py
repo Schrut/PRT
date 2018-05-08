@@ -7,6 +7,7 @@ User Interface classes.
 from multiprocessing import Process
 
 from PyQt5.QtWidgets import (
+	QDoubleSpinBox,
     QRadioButton,
     QMainWindow,
     QFileDialog,
@@ -23,6 +24,7 @@ from PyQt5.QtWidgets import (
     QToolTip,
     QWidget,
     QAction,
+    QLayout,
     QWidget,
     QSlider,
     QLabel,
@@ -47,6 +49,8 @@ import cv2
 
 import smopy
 
+from osgeo import gdal
+
 from draw import RenderArea
 from img import Tiff, TiffSequence
 
@@ -55,8 +59,7 @@ from projection import (
 	HRVpicture, 
 	Satellite, 
 	PixelZone, 
-	gdal_translate, 
-	gdal_warp,
+	gdal_proj_mercator,
 )
 
 import smopy
@@ -105,10 +108,12 @@ class uiMainWindow(QMainWindow):
 	img_area: RenderArea = None
 	img_slider: QSlider = None
 
-	img_slider_old: int = 0
+	slider_old_val: int = 0
 
 	box_gdal: QCheckBox = None
-	
+	box_osm: QCheckBox = None
+	sbox_gdal: QDoubleSpinBox = None
+
 	def __init__(self, screen):
 		super().__init__()
 		self.title = "PRT"
@@ -144,7 +149,7 @@ class uiMainWindow(QMainWindow):
 
 		moved = False
 		step = self.img_slider.singleStep()
-		old = self.img_slider_old # previous value
+		old = self.slider_old_val # previous value
 
 		l_new = old-step # new possible left value
 		r_new = old+step # new possible right value
@@ -170,31 +175,21 @@ class uiMainWindow(QMainWindow):
 				tifs.active(int(value/step))
 
 		if moved:
-			self.img_slider_old = value
+			self.slider_old_val = value
 			_, tif = tifs.current()
 
-			_map = smopy.Map((
-				51.5855835, 
-				-6.5710541, 
-				42.0220060, 
-				8.6532580
-			), z=6)
+			opa = 1.0
+			if self.do_show_gdal:
+				opa = self.sbox_gdal.value()
 
-			_map.save_png('../france.png')
-
-			self.img_area.clear()
-			_h, _w = tif.shape()
-
-			map_img = QImage('../france.png')
-
-
-			self.img_area.push(
-				tif.to_QImage().smoothScaled(_w, _h),
-				opacity=0.8
-			)
-			self.img_area.push(map_img, opacity=1.0)
-			
+			self.img_area.pop()
+			self.img_area.push(tif.to_QImage(), opacity=opa)
 			self.img_area.update()
+
+	def gdal_opacity_changed(self, value):
+		info = self.img_area.pop()
+		self.img_area.push(info[0], value, info[2], info[3])
+		self.img_area.update()
 			
 	def draw_histogram(self):
 		if self.tifs is None:
@@ -219,11 +214,16 @@ class uiMainWindow(QMainWindow):
 		# Disable the GDAL display option
 		self.box_gdal.setEnabled(False)
 		self.box_gdal.setChecked(False)
+		self.box_osm.setEnabled(False)
+
+		# Clear old tifs sequence if not empty
+		if self.tifs is not None:
+			self.tifs.clear()
 
 		# Save the new sequence
 		self.tifs = TiffSequence(fnames)
 
-		# update the slider
+		# Update the slider
 		size = self.tifs.size()
 		width = self.img_slider.width()
 
@@ -239,7 +239,7 @@ class uiMainWindow(QMainWindow):
 		self.img_slider.setTickPosition(QSlider.TicksBelow)
 
 		# Reset the "old position" of the current slider.
-		self.img_slider_old = 0
+		self.slider_old_val = 0
 		_, tif = self.tifs.current()
 		
 		_h, _w = tif.shape()
@@ -248,14 +248,6 @@ class uiMainWindow(QMainWindow):
 		self.img_area.clear()
 		self.img_area.push(tif.to_QImage())
 		self.img_area.update()
-
-		# Fix maximum size of the scroll area
-		self.s_area.setMaximumSize(_w+2, _h+2)
-		
-		# New size of the window
-		new_h = _h+2 + self.menuBar().height() + self.img_slider.height() + 30
-		new_w = _w+2 + self.centralWidget().layout().itemAt(1).geometry().width() + 25
-		self.resize_and_center(new_w, new_h)
 
 	def sequence_as_video(self):
 		if self.tifs is None:
@@ -267,56 +259,122 @@ class uiMainWindow(QMainWindow):
 
 		# non-blocking io operation.
 		Process(
-			target=self.tifs.as_video, 
+			target=self.tifs.as_video,
 			args=(video_path,),
 			daemon=True
 		).start()
 
 	def gdal_projection(self):
-		print("GDAL projection")
-
-		tr_o_path = "../.cache/gdal/translate/"
-		wr_o_path = "../.cache/gdal/warp/"
-
+		"""Proceed to a gdal meractor projection on the source sequence.
+		"""
+		# Parameters of the projection
 		hrv = HRVpicture(11136, 11136, 1000.134, 5565.5)
 		france = PixelZone(10179, 9610, 6591, 5634)
 		meteosat9 = Satellite(35785831.0, 9.5, 0.0)
 
-		old = self.tifs.current()[0]
-		self.tifs.active(0)
+		# Get shape of the current sequence
+		_h, _w = self.tifs.current()[1].shape()
 
-		self.tifs_gdal = TiffSequence([])
+		# The new gdal_tifs sequence
+		new_paths = []
 
-		idx, tif = self.tifs.current()
-		while idx is not self.tifs.img_number-1:
-			gdal_translate(tif, tr_o_path, hrv, meteosat9, france)
-			tif_tr = Tiff(tr_o_path+tif.name)
-			gdal_warp(tif_tr, (1916, 1140), wr_o_path, hrv, meteosat9, france)
-			
-			self.tifs_gdal.paths.append(wr_o_path+tif.name)
-			self.tifs_gdal.img_number += 1
+		# Iterate on pathnames of the sequence.
+		# Mercator projection.
+		pathnames = self.tifs.paths
+		for pathname in pathnames:
+			new_paths.append(
+				gdal_proj_mercator(
+					pathname,
+					_w, _h,
+					_w, _h,
+					hrv,
+					meteosat9, 
+					france
+			))
 
-			self.tifs.shift_right()
-			idx, tif = self.tifs.current()
-
-		self.tifs_gdal.active(0)
-		self.tifs.active(old)
+		# Clear old tifs_gdal sequence
+		if self.tifs_gdal is not None:
+			self.tifs_gdal.clear()
 		
+		# New tifs_gdal sequence:
+		self.tifs_gdal = TiffSequence(new_paths)
+		self.tifs_gdal.active( self.tifs.current()[0] )
+		
+		# Enable display checkbox options
 		self.do_show_gdal = False
 		self.box_gdal.setEnabled(True)
+		self.box_osm.setEnabled(True)
+		self.box_osm.setCheckable(False)
+		self.sbox_gdal.setValue(1.0)
+
 
 	def display_gdal(self, checked: bool):
+		"""When display GDAL checkbox is toggled.
+		
+		Arguments:
+			checked {bool} -- state of the checkbox
+		"""
 		if checked:
 			self.do_show_gdal = True
+			self.box_osm.setCheckable(True)
+			self.sbox_gdal.setEnabled(True)
 			self.tifs_gdal.active(
 				self.tifs.current()[0]
 			)
 
+			# Update display
+			_, tif = self.tifs_gdal.current()
+			self.img_area.clear()
+			self.img_area.push(tif.to_QImage())
+			self.img_area.update()
+
 		else:
 			self.do_show_gdal = False
+			self.sbox_gdal.setEnabled(False)
+			self.box_osm.setCheckable(False)
 			self.tifs.active(
 				self.tifs_gdal.current()[0]
 			)
+
+			# Update display
+			_, tif = self.tifs.current()
+			self.img_area.clear()
+			self.img_area.push(tif.to_QImage())
+			self.img_area.update()
+
+
+	def display_osm(self, checked: bool):
+		if checked:
+			_, tif = self.tifs_gdal.current()
+			
+			# Download a tile from OpenStreetMap with the latitudes & longitudes
+			# of corners top-left & bot-right
+			src = gdal.Open(tif.pname)
+			ulx, xres, _, uly, _, yres  = src.GetGeoTransform()
+			lrx = ulx + (src.RasterXSize * xres)
+			lry = uly + (src.RasterYSize * yres)
+
+			_map = smopy.Map((uly, ulx, lry, lrx), z=6)
+			_map.save_png("../.cache/map.png")
+
+			# Now add it to the RenderArea
+			info = self.img_area.pop()
+			self.img_area.push(QImage("../.cache/map.png"))
+			self.img_area.push(info[0], 0.8, info[2], info[3])
+			self.img_area.update()
+
+			# Change SpinBox value too:
+			self.sbox_gdal.setValue(0.8)
+
+		else:
+			# Remove the tile image from the RenderArea
+			info = self.img_area.pop()
+			self.img_area.clear()
+			self.img_area.push(info[0], info[1], info[2], info[3])
+			self.img_area.update()
+
+			self.sbox_gdal.setValue(1.0)
+
 
 	###### Interface ######
 	def build_left_vbox(self):
@@ -352,14 +410,36 @@ class uiMainWindow(QMainWindow):
 
 		box_osm = QCheckBox("OSM tile")
 		box_osm.setToolTip("Download an OpenStreetMap tile from web API.")
+		box_osm.setEnabled(False)
+		box_osm.toggled.connect(self.display_osm)
 
+		l_opacity = QLabel("Opacity :")
+
+		sbox_gdal = QDoubleSpinBox()
+		sbox_gdal.setEnabled(False)
+		sbox_gdal.setValue(1.0)
+		sbox_gdal.setMaximum(1.0)
+		sbox_gdal.setSingleStep(0.01)
+		sbox_gdal.setAccelerated(True)
+		sbox_gdal.setAcceptDrops(True)
+		sbox_gdal.setFixedWidth(60)
+		sbox_gdal.valueChanged.connect(self.gdal_opacity_changed)
+		
+		opacity_hbox = QHBoxLayout()
+		opacity_hbox.addWidget(l_opacity)
+		opacity_hbox.addWidget(sbox_gdal)
+		opacity_hbox.setAlignment(Qt.AlignLeft)
+		
 		gvbox = QVBoxLayout()
 		gvbox.addWidget(box_gdal)
+		gvbox.addLayout(opacity_hbox)
 		gvbox.addWidget(box_osm)
 
 		gbox = QGroupBox("Display options")
 		gbox.setLayout(gvbox)
 		gbox.setMaximumHeight(100)
+		gbox.setFixedWidth(self.width/3.5)
+		gbox.setFixedHeight(self.height/3)
 
 		gbox2 = QGroupBox("Other options?")
 
@@ -368,6 +448,8 @@ class uiMainWindow(QMainWindow):
 		vbox.addWidget(gbox2)
 
 		self.box_gdal = box_gdal
+		self.box_osm = box_osm
+		self.sbox_gdal = sbox_gdal
 		
 		return vbox
 
