@@ -250,6 +250,9 @@ class uiMainWindow(QMainWindow):
 		self.img_area.push(tif.to_QImage())
 		self.img_area.update()
 
+		_h, _w = tif.shape()
+		self.resize_and_center(_w+206, _h+70)
+
 	def sequence_as_video(self):
 		"""Save our current sequence as Video.
 		"""
@@ -367,24 +370,54 @@ class uiMainWindow(QMainWindow):
 			lry = uly + (src.RasterYSize * yres)
 
 			# Download an OpenStreetMap Tile thanks to smopy
-			# Warning: the Tile you are going to download, is bigger than the zone expected.
+			# Warning: the Tile you are going to download, 
+			# is bigger than the zone expected.
 			_map = smopy.Map((uly, ulx, lry, lrx), z=6)
 			_map.save_png("../.cache/map.png")
 
+			# Get where are the top-left corner &
+			# the bot-right corner into the OSM tile.
 			x, y = _map.to_pixels(uly, ulx)
 			xx, yy = _map.to_pixels(lry, lrx)
 
+			# Compute distance between those points
 			width = int((xx - x)+0.5)
 			height = int((yy - y)+0.5)
 
-			# Now add it to the RenderArea
+			# Now we need to do some scaling & 
+			# remove black pixel from the Mercator projection :
 			qimage, opacity, _, _ = self.img_area.pop()
-			qimage = qimage.smoothScaled( width, height )
 
-			self.img_area.push( QImage("../.cache/map.png") )
-			self.img_area.push( qimage, opacity, x, y+14) # +14 pixels to fit exactly the map.
-			# Change SpinBox value too:
+			# Scale to fit inside the OSM tile:
+			qimage: QImage = qimage.smoothScaled( width, height ) 
+			# Convert to RGBA, so we can add an Alpha value:
+			qimage = qimage.convertToFormat(QImage.Format_ARGB32);
+
+			# Scan our QImage :
+			for h in range(0, qimage.height()):
+				for w in range(0, qimage.width()):
+					# Get only one component:
+					# since its grey image convert to rgba, 
+					# rgb values are the same.
+					red = QColor( qimage.pixel(w, h) ).red()
+					
+					# When value is to low, set the pixel opacity to 0.
+					if red is 0:
+						qimage.setPixelColor(w, h, QColor(0, 0, 0, 0))
+
+			# Now load the map, we need to add it to the RenderArea.
+			map_img = QImage("../.cache/map.png")
+			self.img_area.push( map_img )
+
+			# Re-push after the map our Mercator projection image.
+			# +14 pixels to fit exactly the map (visually).
+			self.img_area.push( qimage, opacity, x, y+14) 
+
+			# Also, change the SpinBox opacity value to a default one:
 			self.sbox_gdal.setValue(0.8)
+
+			# Don't forget to resize our app, so user is happy:
+			self.resize_and_center(map_img.width()+206, map_img.height()+70)
 
 		else:
 			# Remove the tile image from the RenderArea
