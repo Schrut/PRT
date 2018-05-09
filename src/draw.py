@@ -12,6 +12,8 @@ class RenderArea(QLabel):
         super().__init__(parent)
         self.parent = parent
         self.images = []
+        self.pos = (0, 0)
+        self.setMouseTracking(True)
 
     def push(self, image, opacity=1.0, x=0, y=0):
         """ Push a QImage + information into stack.
@@ -73,3 +75,11 @@ class RenderArea(QLabel):
                 max_w = _w
 
         self.setFixedSize(max_w, max_h)
+
+    def mouseMoveEvent(self, event):
+        x = event.x()
+        y = event.y()
+
+        self.pos = ( x, y )
+        self.parent.img_posX.setText( str(x) )
+        self.parent.img_posY.setText( str(y) )

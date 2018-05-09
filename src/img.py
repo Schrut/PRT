@@ -240,6 +240,9 @@ class Tiff():
 
     def shape(self):
         return self.source.shape
+
+    def dtype(self):
+        return self.source.dtype.name
     
     def histogram(self):
         """Calcul histogram of the tiff source.

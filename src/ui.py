@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
+	QLineEdit,
     QGroupBox,
     QCheckBox,
     QMenuBar,
@@ -108,6 +109,9 @@ class uiMainWindow(QMainWindow):
 	s_area: QScrollArea = None
 	img_area: RenderArea = None
 	img_slider: QSlider = None
+	img_info: QLabel = None
+	img_posX: QLineEdit = None
+	img_posY: QLineEdit = None
 
 	slider_old_val: int = 0
 
@@ -189,6 +193,8 @@ class uiMainWindow(QMainWindow):
 			self.img_area.push(tif.to_QImage(), opacity=opa)
 			self.img_area.update()
 
+			self.update_img_info()
+
 	def gdal_opacity_changed(self, value):
 		info = self.img_area.pop()
 		self.img_area.push(info[0], value, info[2], info[3])
@@ -251,7 +257,30 @@ class uiMainWindow(QMainWindow):
 		self.img_area.update()
 
 		_h, _w = tif.shape()
-		self.resize_and_center(_w+206, _h+70)
+		self.resize_and_center(_w+210, _h+100)
+		self.update_img_info()
+		
+	def update_img_info(self):
+		"""Update the img information text field.
+		"""
+
+		if self.tifs is None:
+			return
+
+		_, tif = self.tifs.current()
+		_h, _w = tif.shape()
+
+		# Update information label
+		self.img_info.setText(
+			"<b>filename</b>: "
+			+tif.pname 
+			+" -- <b>size</b>: "
+			+str(_w)+"x"
+			+str(_h)
+			+" -- <b>type</b>: "
+			+tif.dtype()
+		)
+
 
 	def sequence_as_video(self):
 		"""Save our current sequence as Video.
@@ -397,7 +426,7 @@ class uiMainWindow(QMainWindow):
 			for h in range(0, qimage.height()):
 				for w in range(0, qimage.width()):
 					# Get only one component:
-					# since its grey image convert to rgba, 
+					# since its grey image converted to rgba, 
 					# rgb values are the same.
 					red = QColor( qimage.pixel(w, h) ).red()
 					
@@ -417,7 +446,7 @@ class uiMainWindow(QMainWindow):
 			self.sbox_gdal.setValue(0.8)
 
 			# Don't forget to resize our app, so user is happy:
-			self.resize_and_center(map_img.width()+206, map_img.height()+70)
+			self.resize_and_center(map_img.width()+210, map_img.height()+100)
 
 		else:
 			# Remove the tile image from the RenderArea
@@ -429,9 +458,40 @@ class uiMainWindow(QMainWindow):
 
 	###### Interface ######
 	def build_left_vbox(self):
+		# Information layout
+		file_info = QLabel("No data.")
+		file_info.setTextInteractionFlags(Qt.TextSelectableByMouse)
+		file_info.setAlignment(Qt.AlignLeft)
+		file_info.setFixedWidth(9999)
+
+		str_posX = QLabel("Position x:")
+		str_posX.setAlignment(Qt.AlignRight)
+
+		str_posY = QLabel("y:")
+		str_posY.setAlignment(Qt.AlignRight)
+
+		posX = QLineEdit()
+		posX.setReadOnly(True)
+		posX.setText("0")
+		posX.setFixedWidth(40)
+		posX.setFixedHeight(20)
+
+		posY = QLineEdit()
+		posY.setReadOnly(True)
+		posY.setText("0")
+		posY.setFixedWidth(40)
+		posY.setFixedHeight(20)
+
+		info_l = QHBoxLayout()
+		info_l.addWidget( file_info )
+		info_l.addWidget( str_posX )
+		info_l.addWidget( posX )
+		info_l.addWidget( str_posY )
+		info_l.addWidget( posY )
+
 		# Where we are going to draw images
 		s_area = QScrollArea()
-		r_area = RenderArea()
+		r_area = RenderArea(self)
 		s_area.setWidget(r_area)
 
 		# The main slider
@@ -443,6 +503,7 @@ class uiMainWindow(QMainWindow):
 		
 		# The Left Vertical Box Layout
 		vbox = QVBoxLayout()
+		vbox.addLayout(info_l)
 		vbox.addWidget(s_area)
 		vbox.addWidget(slider)
 
@@ -450,6 +511,9 @@ class uiMainWindow(QMainWindow):
 		self.s_area = s_area
 		self.img_area = r_area
 		self.img_slider = slider
+		self.img_posX = posX
+		self.img_posY = posY
+		self.img_info = file_info
 
 		return vbox
 
