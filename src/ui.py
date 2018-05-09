@@ -8,6 +8,7 @@ from multiprocessing import Process
 
 from PyQt5.QtWidgets import (
 	QDoubleSpinBox,
+	QProgressBar,
     QRadioButton,
     QMainWindow,
     QFileDialog,
@@ -113,6 +114,8 @@ class uiMainWindow(QMainWindow):
 	box_gdal: QCheckBox = None
 	box_osm: QCheckBox = None
 	sbox_gdal: QDoubleSpinBox = None
+
+	pbar: QProgressBar = None
 
 	def __init__(self, screen):
 		super().__init__()
@@ -242,14 +245,14 @@ class uiMainWindow(QMainWindow):
 		self.slider_old_val = 0
 		_, tif = self.tifs.current()
 		
-		_h, _w = tif.shape()
-		
 		# Draw new image
 		self.img_area.clear()
 		self.img_area.push(tif.to_QImage())
 		self.img_area.update()
 
 	def sequence_as_video(self):
+		"""Save our current sequence as Video.
+		"""
 		if self.tifs is None:
 			return
 		
@@ -278,6 +281,10 @@ class uiMainWindow(QMainWindow):
 		# The new gdal_tifs sequence
 		new_paths = []
 
+		self.pbar.setEnabled(True)
+		self.pbar.setValue(0.0)
+		self.pbar.setMaximum( self.tifs.img_number )
+
 		# Iterate on pathnames of the sequence.
 		# Mercator projection.
 		pathnames = self.tifs.paths
@@ -286,11 +293,12 @@ class uiMainWindow(QMainWindow):
 				gdal_proj_mercator(
 					pathname,
 					_w, _h,
-					1916, 1140,
+					_w*2, _h*2,
 					hrv,
 					meteosat9, 
 					france
 			))
+			self.pbar.setValue( self.pbar.value() + 1 )
 
 		# Clear old tifs_gdal sequence
 		if self.tifs_gdal is not None:
@@ -306,6 +314,9 @@ class uiMainWindow(QMainWindow):
 		self.box_osm.setEnabled(True)
 		self.box_osm.setCheckable(False)
 		self.sbox_gdal.setValue(1.0)
+
+		self.pbar.setValue(0.0)
+		self.pbar.setEnabled(False)
 
 
 	def display_gdal(self, checked: bool):
@@ -348,31 +359,30 @@ class uiMainWindow(QMainWindow):
 		if checked:
 			_, tif = self.tifs_gdal.current()
 
-			# Download a tile from OpenStreetMap with the latitudes & longitudes
-			# of corners top-left & bot-right
+			# Get the bot-right corner latitude & longitude 
+			# thanks to gdal.GetGeoTransform()
 			src = gdal.Open(tif.pname)
 			ulx, xres, _, uly, _, yres  = src.GetGeoTransform()
 			lrx = ulx + (src.RasterXSize * xres)
 			lry = uly + (src.RasterYSize * yres)
 
+			# Download an OpenStreetMap Tile thanks to smopy
+			# Warning: the Tile you are going to download, is bigger than the zone expected.
 			_map = smopy.Map((uly, ulx, lry, lrx), z=6)
 			_map.save_png("../.cache/map.png")
 
-			x, y = _map.to_pixels(51.5855835, -6.5710541)
-			xx, yy = _map.to_pixels(42.0220060, 8.6532580)
+			x, y = _map.to_pixels(uly, ulx)
+			xx, yy = _map.to_pixels(lry, lrx)
 
 			width = int((xx - x)+0.5)
 			height = int((yy - y)+0.5)
 
-			ax = _map.show_mpl(figsize=(8, 6))
-			ax.plot(x, y, 'or', ms=10, mew=2);
-
 			# Now add it to the RenderArea
-			qimage, opacity, _x, _y = self.img_area.pop()
+			qimage, opacity, _, _ = self.img_area.pop()
 			qimage = qimage.smoothScaled( width, height )
 
 			self.img_area.push( QImage("../.cache/map.png") )
-			self.img_area.push( qimage, opacity, x, y+14) # +14 for visual correction
+			self.img_area.push( qimage, opacity, x, y+14) # +14 pixels to fit exactly the map.
 			# Change SpinBox value too:
 			self.sbox_gdal.setValue(0.8)
 
@@ -421,6 +431,7 @@ class uiMainWindow(QMainWindow):
 		box_osm.setEnabled(False)
 		box_osm.toggled.connect(self.display_osm)
 
+		# Opacity
 		l_opacity = QLabel("Opacity :")
 
 		sbox_gdal = QDoubleSpinBox()
@@ -437,6 +448,7 @@ class uiMainWindow(QMainWindow):
 		opacity_hbox.addWidget(l_opacity)
 		opacity_hbox.addWidget(sbox_gdal)
 		opacity_hbox.setAlignment(Qt.AlignLeft)
+		# ----------
 		
 		gvbox = QVBoxLayout()
 		gvbox.addWidget(box_gdal)
@@ -445,19 +457,31 @@ class uiMainWindow(QMainWindow):
 
 		gbox = QGroupBox("Display options")
 		gbox.setLayout(gvbox)
-		gbox.setMaximumHeight(100)
-		gbox.setFixedWidth(self.width/3.4)
-		gbox.setFixedHeight(self.height/3)
+		gbox.setFixedWidth(180)
+		gbox.setFixedHeight(130)
 
 		gbox2 = QGroupBox("Other options?")
+		gbox2.setFixedWidth(180)
+
+		# The multiple usage progress bar
+		pbar = QProgressBar()
+		pbar.setFixedWidth(180)
+		pbar.setFixedHeight(20)
+		pbar.setAcceptDrops(True)
+		pbar.setValue(0.0)
+		pbar.setEnabled(False)
+		# ---------
 
 		vbox = QVBoxLayout()
+		vbox.setAlignment(Qt.AlignCenter)
 		vbox.addWidget(gbox)
 		vbox.addWidget(gbox2)
+		vbox.addWidget(pbar)
 
 		self.box_gdal = box_gdal
 		self.box_osm = box_osm
 		self.sbox_gdal = sbox_gdal
+		self.pbar = pbar
 		
 		return vbox
 
