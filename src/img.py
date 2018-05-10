@@ -5,7 +5,7 @@ Image module
 from os import path, makedirs
 from time import time
 from osgeo import gdal
-from numpy import uint8, histogram
+from numpy import uint8, histogram, array
 from cv2 import VideoWriter, VideoWriter_fourcc
 from tifffile import imread
 from PyQt5.QtWidgets import QWidget
@@ -179,7 +179,7 @@ class TiffSequence():
         video.write( tif.to_8bits() )
         
         # Read the complete sequence.
-        while idx is not self.img_number-1:
+        while idx+1 is not self.img_number:
             self.shift_right()
             idx, tif = self.current()
             video.write( tif.to_8bits() )

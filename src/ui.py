@@ -132,10 +132,15 @@ class uiMainWindow(QMainWindow):
 		self.build()
 
 	def resize_and_center(self, w, h):
-		self.left = (self.screen.size().width() - w) / 2
-		self.top = (self.screen.size().height() - h) / 2
+		ssize = self.screen.size()
+		sw = ssize.width()
+		sh = ssize.height()
+
+		self.left = (sw - w) / 2
+		self.top = (sh - h) / 2
 		self.width = w
 		self.height = h
+
 		self.setGeometry(self.left, self.top, self.width, self.height)
 
 	##### SIGNALS #####
@@ -273,6 +278,9 @@ class uiMainWindow(QMainWindow):
 		_, tif = self.tifs.current()
 		_h, _w = tif.shape()
 
+		# Get the zoom percentage
+		zoom_per = self.img_area.zlevel * self.img_area.zstep * 100
+
 		# Update information label
 		self.img_info.setText(
 			"<b>filename</b>: "
@@ -282,6 +290,8 @@ class uiMainWindow(QMainWindow):
 			+str(_h)
 			+" -- <b>type</b>: "
 			+tif.dtype()
+			+" -- <b>scale</b>: "
+			+str(zoom_per)+"%"
 		)
 
 
@@ -443,13 +453,15 @@ class uiMainWindow(QMainWindow):
 
 			# Re-push after the map our Mercator projection image.
 			# +14 pixels to fit exactly the map (visually).
-			self.img_area.push( qimage, opacity, x, y+14) 
+			self.img_area.push( qimage, opacity, x, y+14)
 
 			# Also, change the SpinBox opacity value to a default one:
 			self.sbox_gdal.setValue(0.8)
 
 			# Don't forget to resize our app, so user is happy:
 			self.resize_and_center(map_img.width()+210, map_img.height()+100)
+
+			self.img_area.save('test.jpeg', True)
 
 		else:
 			# Remove the tile image from the RenderArea
@@ -475,32 +487,9 @@ class uiMainWindow(QMainWindow):
 		file_info = QLabel("No data.")
 		file_info.setTextInteractionFlags(Qt.TextSelectableByMouse)
 		file_info.setAlignment(Qt.AlignLeft)
-		file_info.setFixedWidth(9999)
-
-		str_posX = QLabel("Position x:")
-		str_posX.setAlignment(Qt.AlignRight)
-
-		str_posY = QLabel("y:")
-		str_posY.setAlignment(Qt.AlignRight)
-
-		posX = QLineEdit()
-		posX.setReadOnly(True)
-		posX.setText("0")
-		posX.setFixedWidth(40)
-		posX.setFixedHeight(20)
-
-		posY = QLineEdit()
-		posY.setReadOnly(True)
-		posY.setText("0")
-		posY.setFixedWidth(40)
-		posY.setFixedHeight(20)
 
 		info_l = QHBoxLayout()
 		info_l.addWidget( file_info )
-		info_l.addWidget( str_posX )
-		info_l.addWidget( posX )
-		info_l.addWidget( str_posY )
-		info_l.addWidget( posY )
 
 		# Where we are going to draw images
 		s_area = QScrollArea()
@@ -524,13 +513,39 @@ class uiMainWindow(QMainWindow):
 		self.s_area = s_area
 		self.img_area = r_area
 		self.img_slider = slider
-		self.img_posX = posX
-		self.img_posY = posY
 		self.img_info = file_info
 
 		return vbox
 
 	def build_right_vbox(self):
+		# Position X|Y Info
+		str_posX = QLabel("x:")
+		str_posX.setFixedWidth(15)
+		str_posX.setAlignment(Qt.AlignRight)
+
+		str_posY = QLabel("y:")
+		str_posY.setFixedWidth(15)
+		str_posY.setAlignment(Qt.AlignRight)
+
+		posX = QLineEdit()
+		posX.setReadOnly(True)
+		posX.setText("0")
+		posX.setFixedWidth(50)
+		posX.setFixedHeight(20)
+
+		posY = QLineEdit()
+		posY.setReadOnly(True)
+		posY.setText("0")
+		posY.setFixedWidth(50)
+		posY.setFixedHeight(20)
+
+		pos_l = QHBoxLayout()
+		pos_l.addWidget( str_posX )
+		pos_l.addWidget( posX )
+		pos_l.addWidget( str_posY )
+		pos_l.addWidget( posY )
+		pos_l.setContentsMargins(0, 0, 0, 10)
+
 		### DISPLAY OPTIONS
 		box_gdal = QCheckBox("Mercator projection")
 		box_gdal.setToolTip("Display new projected tif images.")
@@ -543,7 +558,7 @@ class uiMainWindow(QMainWindow):
 		box_osm.toggled.connect(self.display_osm)
 
 		# Opacity
-		l_opacity = QLabel("Opacity :")
+		label_opacity = QLabel("Opacity :")
 
 		sbox_gdal = QDoubleSpinBox()
 		sbox_gdal.setEnabled(False)
@@ -556,7 +571,7 @@ class uiMainWindow(QMainWindow):
 		sbox_gdal.valueChanged.connect(self.gdal_opacity_changed)
 		
 		opacity_hbox = QHBoxLayout()
-		opacity_hbox.addWidget(l_opacity)
+		opacity_hbox.addWidget(label_opacity)
 		opacity_hbox.addWidget(sbox_gdal)
 		opacity_hbox.setAlignment(Qt.AlignLeft)
 		# ----------
@@ -569,7 +584,7 @@ class uiMainWindow(QMainWindow):
 		gbox = QGroupBox("Display options")
 		gbox.setLayout(gvbox)
 		gbox.setFixedWidth(180)
-		gbox.setFixedHeight(130)
+		gbox.setFixedHeight(150)
 		### ------------
 
 		### ROI OPTIONS
@@ -597,7 +612,6 @@ class uiMainWindow(QMainWindow):
 		gvbox2.addLayout(layout_color)
 
 		gbox2 = QGroupBox("ROI options")
-		gbox2.setFixedWidth(180)
 		gbox2.setLayout( gvbox2 )		
 		### ------------
 
@@ -611,6 +625,7 @@ class uiMainWindow(QMainWindow):
 		# ---------
 
 		vbox = QVBoxLayout()
+		vbox.addLayout(pos_l)
 		vbox.setAlignment(Qt.AlignCenter)
 		vbox.addWidget(gbox)
 		vbox.addWidget(gbox2)
@@ -621,6 +636,9 @@ class uiMainWindow(QMainWindow):
 		self.sbox_gdal = sbox_gdal
 		self.pbar = pbar
 		self.cbox_color = cbox_color
+
+		self.img_posX = posX
+		self.img_posY = posY
 		
 		return vbox
 
