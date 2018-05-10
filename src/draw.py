@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QPainter
+from PyQt5.QtGui import QPainter, QPen, QColor
+from PyQt5.Qt import Qt, QRect
 
 class RenderArea(QLabel):
     """ Create a "RenderArea".
@@ -12,8 +13,11 @@ class RenderArea(QLabel):
         super().__init__(parent)
         self.parent = parent
         self.images = []
-        self.pos = (0, 0)
         self.setMouseTracking(True)
+        self.rect_color = Qt.yellow
+        self.draw_rect = False
+        self.l_pos = None #Left Position
+        self.r_pos = None #Right Position
 
     def push(self, image, opacity=1.0, x=0, y=0):
         """ Push a QImage + information into stack.
@@ -74,12 +78,36 @@ class RenderArea(QLabel):
             if _w > max_w:
                 max_w = _w
 
+        if self.draw_rect is True:
+            #print( self.rect_color )
+            pen = QPen()
+            pen.setColor( self.rect_color )
+            painter.setPen(pen)
+            painter.drawRect(QRect(self.l_pos, self.r_pos))
+
         self.setFixedSize(max_w, max_h)
 
     def mouseMoveEvent(self, event):
         x = event.x()
         y = event.y()
-
-        self.pos = ( x, y )
+        
         self.parent.img_posX.setText( str(x) )
         self.parent.img_posY.setText( str(y) )
+
+        if event.buttons() == Qt.LeftButton:
+            self.r_pos = event.pos()
+            self.draw_rect = True
+            self.update()
+
+    def mousePressEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.l_pos = event.pos()
+
+        elif event.buttons() == Qt.RightButton:
+            self.draw_rect = False
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.r_pos = event.pos()
+            self.update()

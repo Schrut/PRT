@@ -7,8 +7,8 @@ User Interface classes.
 from multiprocessing import Process
 
 from PyQt5.QtWidgets import (
-	QDoubleSpinBox,
-	QProgressBar,
+    QDoubleSpinBox,
+    QProgressBar,
     QRadioButton,
     QMainWindow,
     QFileDialog,
@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
+    QComboBox,
 	QLineEdit,
     QGroupBox,
     QCheckBox,
@@ -120,6 +121,8 @@ class uiMainWindow(QMainWindow):
 	sbox_gdal: QDoubleSpinBox = None
 
 	pbar: QProgressBar = None
+
+	cbox_color: QComboBox = None
 
 	def __init__(self, screen):
 		super().__init__()
@@ -456,6 +459,16 @@ class uiMainWindow(QMainWindow):
 			self.sbox_gdal.setValue(1.0)
 
 
+	def cbox_color_vchanged(self, value):
+		"""When ROI color combox box value change.
+		
+		Arguments:
+			value {Qt.GlobalColor index} -- The enum value of the color.
+		"""
+		color = self.cbox_color.itemData(value)
+		self.img_area.rect_color = Qt.GlobalColor( color )
+		self.img_area.update()
+
 	###### Interface ######
 	def build_left_vbox(self):
 		# Information layout
@@ -518,6 +531,7 @@ class uiMainWindow(QMainWindow):
 		return vbox
 
 	def build_right_vbox(self):
+		### DISPLAY OPTIONS
 		box_gdal = QCheckBox("Mercator projection")
 		box_gdal.setToolTip("Display new projected tif images.")
 		box_gdal.setEnabled(False)
@@ -556,9 +570,36 @@ class uiMainWindow(QMainWindow):
 		gbox.setLayout(gvbox)
 		gbox.setFixedWidth(180)
 		gbox.setFixedHeight(130)
+		### ------------
 
-		gbox2 = QGroupBox("Other options?")
+		### ROI OPTIONS
+		cbox_color = QComboBox()
+		cbox_color.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+		cbox_color.addItem('Yellow', Qt.yellow)
+		cbox_color.addItem('Red', Qt.red)
+		cbox_color.addItem('Magenta', Qt.magenta)
+		cbox_color.addItem('Green', Qt.green)
+		cbox_color.addItem('Blue', Qt.blue)
+		cbox_color.addItem('Cyan', Qt.cyan)
+		cbox_color.addItem('White', Qt.white)
+		cbox_color.addItem('Gray', Qt.gray)
+		cbox_color.addItem('Black', Qt.black)
+		cbox_color.activated.connect(self.cbox_color_vchanged)
+
+		label_color = QLabel("Color: ")
+
+		layout_color = QHBoxLayout()
+		layout_color.addWidget(label_color)
+		layout_color.addWidget(cbox_color)
+		layout_color.setAlignment(Qt.AlignTop)
+
+		gvbox2 = QVBoxLayout()
+		gvbox2.addLayout(layout_color)
+
+		gbox2 = QGroupBox("ROI options")
 		gbox2.setFixedWidth(180)
+		gbox2.setLayout( gvbox2 )		
+		### ------------
 
 		# The multiple usage progress bar
 		pbar = QProgressBar()
@@ -579,6 +620,7 @@ class uiMainWindow(QMainWindow):
 		self.box_osm = box_osm
 		self.sbox_gdal = sbox_gdal
 		self.pbar = pbar
+		self.cbox_color = cbox_color
 		
 		return vbox
 
