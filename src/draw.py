@@ -9,7 +9,7 @@ class RenderArea(QLabel):
     Main attributes:
         `images` -> represents a stack of QImage+information.
     """
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
 
@@ -203,8 +203,9 @@ class RenderArea(QLabel):
         Arguments:
             event {QMouseEvent} -- 
         """
-        self.parent.img_posX.setText( str(event.x()) )
-        self.parent.img_posY.setText( str(event.y()) )
+        if not self.parent is None:
+            self.parent.img_posX.setText( str(event.x()) )
+            self.parent.img_posY.setText( str(event.y()) )
 
         if event.buttons() == Qt.LeftButton:
             self.r_pos = event.pos()
@@ -278,5 +279,6 @@ class RenderArea(QLabel):
                     self.l_pos *= step
 
         # Update the scale info.
-        self.parent.update_img_info()
+        if not self.parent is None:
+            self.parent.update_img_info()
         self.update()

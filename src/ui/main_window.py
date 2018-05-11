@@ -65,6 +65,7 @@ from projection import (
 )
 
 from .license import uiLicenseWindow
+from .view import ResultWindow
 
 
 """
@@ -97,7 +98,7 @@ class uiMainWindow(QMainWindow):
 	sbox_gdal: QDoubleSpinBox = None
 	pbar: QProgressBar = None
 	cbox_color: QComboBox = None
-	crop_box: QCheckBox = None
+	crop_button: QPushButton = None
 
 	# slider old value/index
 	slider_old_val: int = 0
@@ -285,7 +286,7 @@ class uiMainWindow(QMainWindow):
 		if tifs is None:
 			return
 
-		_, tif = tifs.current()
+		idx, tif = tifs.current()
 		_h, _w = tif.shape()
 
 		# Get the zoom percentage
@@ -295,13 +296,15 @@ class uiMainWindow(QMainWindow):
 		self.img_info.setText(
 			"<b>filename</b>: "
 			+tif.pname 
-			+" -- <b>size</b>: "
+			+" ~ <b>size</b>: "
 			+str(_w)+"x"
 			+str(_h)
-			+" -- <b>type</b>: "
+			+" ~ <b>type</b>: "
 			+tif.dtype()
-			+" -- <b>scale</b>: "
+			+" ~ <b>scale</b>: "
 			+str(zoom_per)+"%"
+			+" ~ <b>index</b>: "+str(idx+1)+"/"
+			+str(tifs.img_number)
 		)
 
 	def gdal_projection(self):
@@ -430,6 +433,8 @@ class uiMainWindow(QMainWindow):
 			# Now, we need to add OSM tile to the RenderArea.
 			# Then, add a pre-treatment to the Mercator projection (scaling, ...)
 
+			self.sbox_gdal.setValue(0.8) # Opacity
+
 			image, opacity, x, y = self.img_area.pop() # pop image projection
 
 			# Insert the map into the stack
@@ -452,6 +457,8 @@ class uiMainWindow(QMainWindow):
 			self.resize_and_center(imap.width()+206, imap.height()+95)
 
 		else:
+			self.sbox_gdal.setValue(1.0) # Opacity
+
 			# Remove OSM tile from the RenderArea
 			_, opacity, _, _ = self.img_area.pop() # Projected image
 			self.img_area.clear() # Remove all
@@ -538,15 +545,18 @@ class uiMainWindow(QMainWindow):
 		self.img_area.update()
 
 
-	def make_a_crop(self, value):
+	def make_a_crop(self):
 		"""Create new PNG images of the croped sequence.
 		"""
-		if value and self.img_area.draw_rect:
+		if self.img_area.draw_rect:
 			self.pbar.setEnabled(True)
 			
 			path = "../.cache/crop/"
 			if not os.path.exists(path):
 				os.makedirs(path)
+
+			# pathnames of all the new croped images.
+			paths = []
 
 			# Select the current tiff sequence
 			tifs: TiffSequence = None
@@ -557,7 +567,9 @@ class uiMainWindow(QMainWindow):
 
 			self.pbar.setMaximum(tifs.img_number)
 
+			old, _ = tifs.current()
 			tifs.active(0)
+
 			for i in range(0, tifs.img_number):
 				# Pop the previous image on the stack
 				self.img_area.pop()
@@ -584,15 +596,21 @@ class uiMainWindow(QMainWindow):
 
 				# name without extension (.tif or .tiff)
 				name = os.path.splitext(tif.name)[0]
-				self.img_area.save(path+name+".png", True)
+				name = path + name + ".png"
+				paths.append( name )
+				self.img_area.save(name, True)
 
 				self.pbar.setValue( self.pbar.value() + 1 )
 				tifs.shift_right()
 
 			self.pbar.setValue(0)
 			self.pbar.setEnabled(False)
-		
-		self.crop_box.setChecked(False)
+
+			tifs.active(old)
+			self.img_slider.setValue( old * self.img_slider.singleStep() )
+
+			## Display results
+			ResultWindow(self, paths)
 
 	######################################################
 	######################################################
@@ -718,15 +736,12 @@ class uiMainWindow(QMainWindow):
 		layout_color.addWidget(cbox_color)
 		layout_color.setAlignment(Qt.AlignTop)
 
-		
-		crop_label = QLabel("Make a crop")
-		crop_box = QCheckBox()
-		crop_box.toggled.connect(self.make_a_crop)
+		crop_button = QPushButton("Make a crop")
+		crop_button.clicked.connect(self.make_a_crop)
 
 		layout_crop = QHBoxLayout()
-		layout_crop.addWidget(crop_box)
-		layout_crop.addWidget(crop_label)
-		layout_crop.setAlignment(Qt.AlignLeft)
+		layout_crop.addWidget(crop_button)
+		layout_crop.setAlignment(Qt.AlignHCenter)
 
 		gvbox2 = QVBoxLayout()
 		gvbox2.addLayout(layout_color)
@@ -766,7 +781,7 @@ class uiMainWindow(QMainWindow):
 		self.img_posX = posX
 		self.img_posY = posY
 
-		self.crop_box = crop_box
+		self.crop_b = crop_button
 		
 		return vbox
 
