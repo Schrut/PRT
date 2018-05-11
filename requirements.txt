@@ -3,4 +3,5 @@ pyqt5
 pyqtchart
 tifffile
 opencv-python
+qimage2ndarray
 GDAL

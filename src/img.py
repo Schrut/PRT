@@ -5,11 +5,12 @@ Image module
 from os import path, makedirs
 from time import time
 from osgeo import gdal
-from numpy import uint8, histogram, array
+from numpy import uint8, histogram
 from cv2 import VideoWriter, VideoWriter_fourcc
 from tifffile import imread
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QColor
+import qimage2ndarray as q2a
 
 from draw import RenderArea
 

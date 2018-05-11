@@ -27,6 +27,9 @@ class RenderArea(QLabel):
         self.zstep = 0.25 # Zoom step
         self.step = 0
 
+    def zoom(self):
+        return self.zlevel * self.zstep
+
     def push(self, image, opacity=1.0, x=0, y=0):
         """ Push a QImage + information into stack.
         """
@@ -71,7 +74,7 @@ class RenderArea(QLabel):
         dst_h = 0
 
         # Zoom
-        zoom = self.zstep * self.zlevel
+        zoom = self.zoom()
 
         # Current number of images into the stack.
         nbimg = len(self.images)
@@ -153,7 +156,7 @@ class RenderArea(QLabel):
         area_h = 0
 
         # Zoom
-        zoom = self.zstep * self.zlevel
+        zoom = self.zoom()
 
         # Init QPainter.
         painter = QPainter(self)

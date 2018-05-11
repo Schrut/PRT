@@ -12,7 +12,6 @@ from PyQt5.QtWidgets import (
     QRadioButton,
     QMainWindow,
     QFileDialog,
-    QMessageBox,
     QScrollArea,
     QSizePolicy,
     QPushButton,
@@ -20,7 +19,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QComboBox,
-	QLineEdit,
+    QLineEdit,
     QGroupBox,
     QCheckBox,
     QMenuBar,
@@ -35,14 +34,14 @@ from PyQt5.QtWidgets import (
 )
 
 from PyQt5.QtGui import (
-	QImage,
+    QImage,
     QPainter,
     QColor,
     QPen,
 )
 
 from PyQt5.QtCore import (
-    QRectF,
+	QRect,
     Qt,
 )
 
@@ -59,76 +58,55 @@ from img import Tiff, TiffSequence
 
 from histogram import Histogram
 from projection import (
-	HRVpicture, 
-	Satellite, 
-	PixelZone, 
-	gdal_proj_mercator,
+    HRVpicture,
+    Satellite, 
+    PixelZone, 
+    gdal_proj_mercator,
 )
 
-import smopy
+from .license import uiLicenseWindow
 
-class uiLicenseWindow(QMessageBox):
-	"""
-	The MIT License (MIT)
-	https://mit-license.org/
-	"""
-	def __init__(self, parent):
-		super().__init__(parent)
-		self.parent = parent
-		self.title = "The MIT License (MIT)"
-		#Hardcoded License
-		self.license = "<pre><b>Copyright © 2018  <i>~ Thibault HECKEL, Florian GIMENEZ ~</i></b><br><br>\
-Permission is hereby granted, free of charge, to any person obtaining a copy<br>\
-of this software and associated documentation files (the “Software”), to deal<br>\
-in the Software without restriction, including without limitation the rights<br>\
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br>\
-copies of the Software, and to permit persons to whom the Software is<br>\
-furnished to do so, subject to the following conditions:<br><br>\
-The above copyright notice and this permission notice shall be included in all<br>\
-copies or substantial portions of the Software.<br><br>\
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br>\
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br>\
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br>\
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br>\
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br>\
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE<br>\
-SOFTWARE.</pre><br>\
-Read more at: <a href=\"https://opensource.org/licenses/MIT\">\
-https://opensource.org/licenses/MIT</a>"
-
-	def on_click(self):
-		self.information(self.parent, self.title, self.license, QMessageBox.Ok)
 
 """
 User Interface Main Window
 """
 class uiMainWindow(QMainWindow):
-	tifs: TiffSequence = None
-	tifs_gdal: TiffSequence = None
-	do_show_gdal = False
 
+	# TIFFS SEQUENCES:
+	tifs: TiffSequence = None # source Files.
+	tifs_gdal: TiffSequence = None # source files after projection.
+	do_show_gdal = False
+	do_show_osm = False
+
+	# OpenStreetMap
+	osm_action: QAction = None
+	osm_w: int = 0
+	osm_h: int = 0
+	osm_x: int = 0
+	osm_y: int = 0
+	
+	# Usefull widgets
 	s_area: QScrollArea = None
 	img_area: RenderArea = None
 	img_slider: QSlider = None
 	img_info: QLabel = None
 	img_posX: QLineEdit = None
 	img_posY: QLineEdit = None
-
-	slider_old_val: int = 0
-
 	box_gdal: QCheckBox = None
 	box_osm: QCheckBox = None
 	sbox_gdal: QDoubleSpinBox = None
-
 	pbar: QProgressBar = None
-
 	cbox_color: QComboBox = None
+	crop_box: QCheckBox = None
+
+	# slider old value/index
+	slider_old_val: int = 0
 
 	def __init__(self, screen):
 		super().__init__()
 		self.title = "PRT"
 		self.screen = screen
-		self.resize_and_center(600, 400)
+		self.resize_and_center(800, 600)
 		self.build()
 
 	def resize_and_center(self, w, h):
@@ -143,6 +121,8 @@ class uiMainWindow(QMainWindow):
 
 		self.setGeometry(self.left, self.top, self.width, self.height)
 
+	######################################################################
+	######################################################################
 	##### SIGNALS #####
 	def img_slider_moved(self, value):
 		"""When slider's value has changed, do something:
@@ -198,9 +178,21 @@ class uiMainWindow(QMainWindow):
 				opa = self.sbox_gdal.value()
 
 			self.img_area.pop()
-			self.img_area.push(tif.to_QImage(), opacity=opa)
-			self.img_area.update()
+			
+			# If OSM display is ON
+			if self.do_show_osm:
+				# Scale image to fit the map
+				image = tif.to_QImage().scaled(
+					self.osm_w, self.osm_h,
+					Qt.IgnoreAspectRatio,
+					Qt.SmoothTransformation
+				)
+				self.img_area.push(image, opa, self.osm_x, self.osm_y+14)
 
+			else:
+				self.img_area.push(tif.to_QImage(), opacity=opa)
+
+			self.img_area.update()
 			self.update_img_info()
 
 	def gdal_opacity_changed(self, value):
@@ -209,10 +201,17 @@ class uiMainWindow(QMainWindow):
 		self.img_area.update()
 			
 	def draw_histogram(self):
-		if self.tifs is None:
+		# Get the right sequence:
+		tifs: TiffSequence = None
+		if self.do_show_gdal:
+			tifs = self.tifs_gdal
+		else:
+			tifs = self.tifs
+
+		if tifs is None:
 			return
 		
-		_, tif = self.tifs.current()
+		_, tif = tifs.current()
 		Histogram(self, tif.source, tif.name)
 
 	def load_tiffs(self):
@@ -232,6 +231,7 @@ class uiMainWindow(QMainWindow):
 		self.box_gdal.setEnabled(False)
 		self.box_gdal.setChecked(False)
 		self.box_osm.setEnabled(False)
+		self.osm_action.setEnabled(False)
 
 		# Clear old tifs sequence if not empty
 		if self.tifs is not None:
@@ -240,14 +240,16 @@ class uiMainWindow(QMainWindow):
 		# Save the new sequence
 		self.tifs = TiffSequence(fnames)
 
-		# Update the slider
+		## SLIDER:
 		size = self.tifs.size()
 		width = self.img_slider.width()
 
+		# Step
 		step = int(width/size)
 		if step is 0:
 			step = 1
 		
+		# Slider parameters
 		self.img_slider.setEnabled(True)
 		self.img_slider.setValue(0)
 		self.img_slider.setMaximum( (size-1)*step )
@@ -255,27 +257,35 @@ class uiMainWindow(QMainWindow):
 		self.img_slider.setTickInterval(step)
 		self.img_slider.setTickPosition(QSlider.TicksBelow)
 
-		# Reset the "old position" of the current slider.
+		# Reset old position.
 		self.slider_old_val = 0
-		_, tif = self.tifs.current()
-		
+
 		# Draw new image
+		_, tif = self.tifs.current()
 		self.img_area.clear()
 		self.img_area.push(tif.to_QImage())
 		self.img_area.update()
-
-		_h, _w = tif.shape()
-		self.resize_and_center(_w+210, _h+100)
 		self.update_img_info()
+
+		# Resize app
+		_h, _w = tif.shape()
+		self.resize_and_center(_w+206, _h+95)
 		
 	def update_img_info(self):
 		"""Update the img information text field.
 		"""
+		# Get the right sequence
+		tifs: TiffSequence = None
+		if self.do_show_gdal:
+			tifs = self.tifs_gdal
+		else:
+			tifs = self.tifs
 
-		if self.tifs is None:
+		# Check if not null
+		if tifs is None:
 			return
 
-		_, tif = self.tifs.current()
+		_, tif = tifs.current()
 		_h, _w = tif.shape()
 
 		# Get the zoom percentage
@@ -294,47 +304,35 @@ class uiMainWindow(QMainWindow):
 			+str(zoom_per)+"%"
 		)
 
-
-	def sequence_as_video(self):
-		"""Save our current sequence as Video.
-		"""
-		if self.tifs is None:
-			return
-		
-		# for the moment, default path to video is:
-		# TODO: make user choose where he wants to save the video.
-		video_path = "../video/"
-
-		# non-blocking io operation.
-		Process(
-			target=self.tifs.as_video,
-			args=(video_path,),
-			daemon=True
-		).start()
-
 	def gdal_projection(self):
 		"""Proceed to a gdal meractor projection on the source sequence.
 		"""
-		# Parameters of the projection
-		hrv = HRVpicture(11136, 11136, 1000.134, 5565.5)
-		france = PixelZone(10179, 9610, 6591, 5634)
-		meteosat9 = Satellite(35785831.0, 9.5, 0.0)
+		# If sequence is null
+		if self.tifs is None:
+			return
 
-		# Get shape of the current sequence
-		_h, _w = self.tifs.current()[1].shape()
+		# Parameters of the projection
+		hrv = HRVpicture(11136, 11136, 1000.134, 5565.5) # High Resolution Visible
+		france = PixelZone(10179, 9610, 6591, 5634) # France croped region, inside HRV
+		meteosat9 = Satellite(35785831.0, 9.5, 0.0) # Satellite height, lon & lat
+
+		# Get shape of the current sequence.
+		# Assuming that the whole sequence as the same size.
+		_, tif = self.tifs.current()
+		_h, _w = tif.shape()
 
 		# The new gdal_tifs sequence
 		new_paths = []
 
+		# Enable progress bar
 		self.pbar.setEnabled(True)
 		self.pbar.setValue(0.0)
 		self.pbar.setMaximum( self.tifs.img_number )
 
 		# Iterate on pathnames of the sequence.
-		# Mercator projection.
-		pathnames = self.tifs.paths
-		for pathname in pathnames:
+		for pathname in self.tifs.paths:
 			new_paths.append(
+				# Mercator projection
 				gdal_proj_mercator(
 					pathname,
 					_w, _h,
@@ -343,6 +341,7 @@ class uiMainWindow(QMainWindow):
 					meteosat9, 
 					france
 			))
+			# Update progress bar
 			self.pbar.setValue( self.pbar.value() + 1 )
 
 		# Clear old tifs_gdal sequence
@@ -351,17 +350,17 @@ class uiMainWindow(QMainWindow):
 		
 		# New tifs_gdal sequence:
 		self.tifs_gdal = TiffSequence(new_paths)
-		self.tifs_gdal.active( self.tifs.current()[0] )
 		
-		# Enable display checkbox options
+		# Setup display options:
 		self.do_show_gdal = False
 		self.box_gdal.setEnabled(True)
-		self.box_osm.setEnabled(True)
-		self.box_osm.setCheckable(False)
 		self.sbox_gdal.setValue(1.0)
 
+		# Reset progress bar
 		self.pbar.setValue(0.0)
 		self.pbar.setEnabled(False)
+
+		self.osm_action.setEnabled(True)
 
 
 	def display_gdal(self, checked: bool):
@@ -370,106 +369,163 @@ class uiMainWindow(QMainWindow):
 		Arguments:
 			checked {bool} -- state of the checkbox
 		"""
+		# Disable ROI display
+		self.img_area.draw_rect = False
+
 		if checked:
+			idx, _ = self.tifs.current()
+
 			self.do_show_gdal = True
 			self.box_osm.setCheckable(True)
 			self.sbox_gdal.setEnabled(True)
-			self.tifs_gdal.active(
-				self.tifs.current()[0]
-			)
+			self.sbox_gdal.setValue(1.0) # Reset opacity to 1.0
+
+			# Active the good image.
+			self.tifs_gdal.active(idx)
+			_, tif = self.tifs_gdal.current()
 
 			# Update display
-			_, tif = self.tifs_gdal.current()
-			self.img_area.clear()
+			self.img_area.clear() # Erase all
 			self.img_area.push(tif.to_QImage())
+			self.img_area.zlevel = 2
 			self.img_area.update()
-			self.sbox_gdal.setValue(1.0)
+			self.update_img_info()
+
+			# Update app size
+			zoom = self.img_area.zoom()
+			_h, _w = tif.shape()
+			self.resize_and_center((_w*zoom)+206, (_h*zoom)+95)
 
 		else:
+			idx, _ = self.tifs_gdal.current()
+
 			self.do_show_gdal = False
+			self.do_show_osm = False
 			self.sbox_gdal.setEnabled(False)
 			self.box_osm.setCheckable(False)
-			self.tifs.active(
-				self.tifs_gdal.current()[0]
-			)
+			self.tifs.active(idx)
 
 			# Update display
 			_, tif = self.tifs.current()
 			self.img_area.clear()
 			self.img_area.push(tif.to_QImage())
+			self.img_area.zlevel = 4
 			self.img_area.update()
+			self.update_img_info()
+			
+			# Update app size
+			_h, _w = tif.shape()
+			self.resize_and_center(_w+206, _h+95)
 
 
 	def display_osm(self, checked: bool):
+		"""When OSM Tile display option is checked.
+		"""
+		self.do_show_osm = checked
+		self.img_area.draw_rect = False
+
 		if checked:
-			_, tif = self.tifs_gdal.current()
+			# In this state, the meractor projection is currently displayed.
+			# The OSM tile is already downloaded.
+			# Now, we need to add OSM tile to the RenderArea.
+			# Then, add a pre-treatment to the Mercator projection (scaling, ...)
 
-			# Get the bot-right corner latitude & longitude 
-			# thanks to gdal.GetGeoTransform()
-			src = gdal.Open(tif.pname)
-			ulx, xres, _, uly, _, yres  = src.GetGeoTransform()
-			lrx = ulx + (src.RasterXSize * xres)
-			lry = uly + (src.RasterYSize * yres)
+			image, opacity, x, y = self.img_area.pop() # pop image projection
 
-			# Download an OpenStreetMap Tile thanks to smopy
-			# Warning: the Tile you are going to download, 
-			# is bigger than the zone expected.
-			_map = smopy.Map((uly, ulx, lry, lrx), z=6)
-			_map.save_png("../.cache/map.png")
+			# Insert the map into the stack
+			imap = QImage("../.cache/osm/map.png")
+			self.img_area.push(imap, 1.0, 0, 0)
 
-			# Get where are the top-left corner &
-			# the bot-right corner into the OSM tile.
-			x, y = _map.to_pixels(uly, ulx)
-			xx, yy = _map.to_pixels(lry, lrx)
+			# Scale image to fit the map
+			image = image.scaled(
+				self.osm_w, self.osm_h,
+				Qt.IgnoreAspectRatio,
+				Qt.SmoothTransformation
+			)
+			
+			self.img_area.push(image, opacity, self.osm_x, self.osm_y+14) # ?? +14 to fit exactly the map
 
-			# Compute distance between those points
-			width = int((xx - x)+0.5)
-			height = int((yy - y)+0.5)
+			self.img_area.zlevel = 4
+			self.img_area.update()
 
-			# Now we need to do some scaling & 
-			# remove black pixel from the Mercator projection :
-			qimage, opacity, _, _ = self.img_area.pop()
-
-			# Scale to fit inside the OSM tile:
-			qimage: QImage = qimage.smoothScaled( width, height ) 
-			# Convert to RGBA, so we can add an Alpha value:
-			qimage = qimage.convertToFormat(QImage.Format_ARGB32);
-
-			# Scan our QImage :
-			for h in range(0, qimage.height()):
-				for w in range(0, qimage.width()):
-					# Get only one component:
-					# since its grey image converted to rgba, 
-					# rgb values are the same.
-					red = QColor( qimage.pixel(w, h) ).red()
-					
-					# When value is to low, set the pixel opacity to 0.
-					if red is 0:
-						qimage.setPixelColor(w, h, QColor(0, 0, 0, 0))
-
-			# Now load the map, we need to add it to the RenderArea.
-			map_img = QImage("../.cache/map.png")
-			self.img_area.push( map_img )
-
-			# Re-push after the map our Mercator projection image.
-			# +14 pixels to fit exactly the map (visually).
-			self.img_area.push( qimage, opacity, x, y+14)
-
-			# Also, change the SpinBox opacity value to a default one:
-			self.sbox_gdal.setValue(0.8)
-
-			# Don't forget to resize our app, so user is happy:
-			self.resize_and_center(map_img.width()+210, map_img.height()+100)
-
-			self.img_area.save('test.jpeg', True)
+			self.update_img_info()
+			self.resize_and_center(imap.width()+206, imap.height()+95)
 
 		else:
-			# Remove the tile image from the RenderArea
-			info = self.img_area.pop()
-			self.img_area.clear()
-			self.img_area.push(info[0], info[1], info[2], info[3])
-			self.sbox_gdal.setValue(1.0)
+			# Remove OSM tile from the RenderArea
+			_, opacity, _, _ = self.img_area.pop() # Projected image
+			self.img_area.clear() # Remove all
 
+			# Since we don't need scaling ..., 
+			# just push the raw projected image.
+			_, tif = self.tifs_gdal.current() 
+			self.img_area.push(tif.to_QImage(), opacity, 0, 0)
+			self.img_area.zlevel = 2
+			self.img_area.update()
+
+			self.update_img_info()
+
+			zoom = self.img_area.zoom()
+			_h, _w = tif.shape()
+			self.resize_and_center((_w*zoom)+206, (_h*zoom)+95)
+
+	def download_osm(self):
+		"""Download an OpenStreetMap tile from the web API.
+		"""
+		if self.tifs_gdal is None:
+			return
+
+		self.pbar.setEnabled(True)
+		self.pbar.setMaximum(100)
+		self.pbar.setValue(20)
+
+		old, tif = self.tifs_gdal.current()
+
+		# Get the bot-right corner latitude & longitude 
+		# thanks to gdal.GetGeoTransform()
+		src = gdal.Open(tif.pname)
+		ulx, xres, _, uly, _, yres  = src.GetGeoTransform()
+		lrx = ulx + (src.RasterXSize * xres)
+		lry = uly + (src.RasterYSize * yres)
+
+		self.pbar.setValue(40)
+
+		# Download an OpenStreetMap Tile thanks to smopy
+		# Warning: the Tile you are going to download, 
+		# is bigger than the zone expected.
+		_map = smopy.Map((uly, ulx, lry, lrx), z=6)
+
+		self.pbar.setValue(80)
+
+		# Save image
+		path = "../.cache/osm/"
+		if not os.path.exists(path):
+			os.makedirs(path)
+		
+		_map.save_png(path+"map.png")
+
+		# Get top-left & bot-righet corners pixels coordinates:
+		x, y = _map.to_pixels(uly, ulx)
+		xx, yy = _map.to_pixels(lry, lrx)
+
+		# Compute distance between those points:
+		# Those distances, will be the size of our mercator 
+		# projections once they are scaled.
+		self.osm_w = int((xx - x)+0.5)
+		self.osm_h = int((yy - y)+0.5)
+		self.osm_x = x
+		self.osm_y = y
+
+		self.pbar.setValue(100)
+		self.box_osm.setEnabled(True)
+		# If the mercator projection is already displayed while downloading Tile
+		if self.do_show_gdal:
+			self.box_osm.setCheckable(True)
+		else:
+			self.box_osm.setCheckable(False)
+		
+		self.pbar.setEnabled(False)
+		self.pbar.setValue(0)
 
 	def cbox_color_vchanged(self, value):
 		"""When ROI color combox box value change.
@@ -481,6 +537,65 @@ class uiMainWindow(QMainWindow):
 		self.img_area.rect_color = Qt.GlobalColor( color )
 		self.img_area.update()
 
+
+	def make_a_crop(self, value):
+		"""Create new PNG images of the croped sequence.
+		"""
+		if value and self.img_area.draw_rect:
+			self.pbar.setEnabled(True)
+			
+			path = "../.cache/crop/"
+			if not os.path.exists(path):
+				os.makedirs(path)
+
+			# Select the current tiff sequence
+			tifs: TiffSequence = None
+			if self.do_show_gdal:
+				tifs = self.tifs_gdal
+			else:
+				tifs = self.tifs
+
+			self.pbar.setMaximum(tifs.img_number)
+
+			tifs.active(0)
+			for i in range(0, tifs.img_number):
+				# Pop the previous image on the stack
+				self.img_area.pop()
+
+				# Opacity
+				opa = 1.0
+				if self.do_show_gdal:
+					opa = self.sbox_gdal.value()
+
+				_, tif = tifs.current()
+				
+				# If OSM display is ON
+				if self.do_show_osm:
+					# Scale image to fit the map
+					image = tif.to_QImage().scaled(
+						self.osm_w, self.osm_h,
+						Qt.IgnoreAspectRatio,
+						Qt.SmoothTransformation
+					)
+					self.img_area.push(image, opa, self.osm_x, self.osm_y+14)
+
+				else:
+					self.img_area.push(tif.to_QImage(), opacity=opa)
+
+				# name without extension (.tif or .tiff)
+				name = os.path.splitext(tif.name)[0]
+				self.img_area.save(path+name+".png", True)
+
+				self.pbar.setValue( self.pbar.value() + 1 )
+				tifs.shift_right()
+
+			self.pbar.setValue(0)
+			self.pbar.setEnabled(False)
+		
+		self.crop_box.setChecked(False)
+
+	######################################################
+	######################################################
 	###### Interface ######
 	def build_left_vbox(self):
 		# Information layout
@@ -544,16 +659,16 @@ class uiMainWindow(QMainWindow):
 		pos_l.addWidget( posX )
 		pos_l.addWidget( str_posY )
 		pos_l.addWidget( posY )
-		pos_l.setContentsMargins(0, 0, 0, 10)
+		pos_l.setContentsMargins(0, 25, 0, 10)
 
 		### DISPLAY OPTIONS
-		box_gdal = QCheckBox("Mercator projection")
-		box_gdal.setToolTip("Display new projected tif images.")
+		box_gdal = QCheckBox("Mercator projection.")
+		box_gdal.setToolTip("Display new projected tif images")
 		box_gdal.setEnabled(False)
 		box_gdal.toggled.connect(self.display_gdal)
 
-		box_osm = QCheckBox("OSM tile")
-		box_osm.setToolTip("Download an OpenStreetMap tile from web API.")
+		box_osm = QCheckBox("OSM tile.")
+		box_osm.setToolTip("Display OSM Tile behind projection")
 		box_osm.setEnabled(False)
 		box_osm.toggled.connect(self.display_osm)
 
@@ -592,27 +707,37 @@ class uiMainWindow(QMainWindow):
 		cbox_color.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 		cbox_color.addItem('Yellow', Qt.yellow)
 		cbox_color.addItem('Red', Qt.red)
-		cbox_color.addItem('Magenta', Qt.magenta)
 		cbox_color.addItem('Green', Qt.green)
 		cbox_color.addItem('Blue', Qt.blue)
-		cbox_color.addItem('Cyan', Qt.cyan)
-		cbox_color.addItem('White', Qt.white)
-		cbox_color.addItem('Gray', Qt.gray)
-		cbox_color.addItem('Black', Qt.black)
 		cbox_color.activated.connect(self.cbox_color_vchanged)
 
-		label_color = QLabel("Color: ")
+		label_color = QLabel("Color : ")
 
 		layout_color = QHBoxLayout()
 		layout_color.addWidget(label_color)
 		layout_color.addWidget(cbox_color)
 		layout_color.setAlignment(Qt.AlignTop)
 
+		
+		crop_label = QLabel("Make a crop")
+		crop_box = QCheckBox()
+		crop_box.toggled.connect(self.make_a_crop)
+
+		layout_crop = QHBoxLayout()
+		layout_crop.addWidget(crop_box)
+		layout_crop.addWidget(crop_label)
+		layout_crop.setAlignment(Qt.AlignLeft)
+
 		gvbox2 = QVBoxLayout()
 		gvbox2.addLayout(layout_color)
+		gvbox2.addLayout(layout_crop)
 
 		gbox2 = QGroupBox("ROI options")
-		gbox2.setLayout( gvbox2 )		
+		gbox2.setLayout( gvbox2 )
+		gbox2.setFixedHeight(100)
+
+		gbox3 = QGroupBox("others?")
+
 		### ------------
 
 		# The multiple usage progress bar
@@ -629,6 +754,7 @@ class uiMainWindow(QMainWindow):
 		vbox.setAlignment(Qt.AlignCenter)
 		vbox.addWidget(gbox)
 		vbox.addWidget(gbox2)
+		vbox.addWidget(gbox3)
 		vbox.addWidget(pbar)
 
 		self.box_gdal = box_gdal
@@ -639,6 +765,8 @@ class uiMainWindow(QMainWindow):
 
 		self.img_posX = posX
 		self.img_posY = posY
+
+		self.crop_box = crop_box
 		
 		return vbox
 
@@ -652,8 +780,11 @@ class uiMainWindow(QMainWindow):
 		widget = QWidget()
 		widget.setLayout(self.build_grid())
 		return widget
-
+	
+	###################################################
+	###################################################
 	####### MENU #######
+	### ACTIONS
 	def action_close(self):
 		action = QAction("Close", self)
 		action.setShortcut("Ctrl+Q")
@@ -664,11 +795,6 @@ class uiMainWindow(QMainWindow):
 		action = QAction("Open tiffs", self)
 		action.setShortcut("Ctrl+O")
 		action.triggered.connect(self.load_tiffs)
-		return action
-
-	def action_as_video(self):
-		action = QAction("Save as video", self)
-		action.triggered.connect(self.sequence_as_video)
 		return action
 
 	def action_show_license(self):
@@ -684,15 +810,24 @@ class uiMainWindow(QMainWindow):
 		return action
 
 	def action_gdal(self):
-		action = QAction("GDAL", self)
+		action = QAction("GDAL Mercator projection", self)
 		action.setShortcut("Ctrl+G")
 		action.triggered.connect(self.gdal_projection)
 		return action
 
+	def action_dl_osm_tile(self):
+		action = QAction("OpenStreetMap Tile", self)
+		action.setToolTip("Download an OpenStreetMap tile of the current region.")
+		action.triggered.connect(self.download_osm)
+		action.setEnabled(False)
+		self.osm_action = action
+		return action
+	### --------------------------------------------------------
+
+	### MENU BAR MENUS:
 	def menu_file(self):
 		menu = QMenu("File", self.menuBar())
 		menu.addAction(self.action_load_tiffs())
-		menu.addAction(self.action_as_video())
 		menu.addSeparator()
 		menu.addAction(self.action_close())
 		return menu
@@ -701,6 +836,11 @@ class uiMainWindow(QMainWindow):
 		menu = QMenu("Process", self.menuBar())
 		menu.addAction(self.action_draw_histogram())
 		menu.addAction(self.action_gdal())
+		return menu
+
+	def menu_download(self):
+		menu = QMenu("Download", self.menuBar())
+		menu.addAction(self.action_dl_osm_tile())
 		return menu
 	
 	def menu_about(self):
@@ -712,7 +852,10 @@ class uiMainWindow(QMainWindow):
 		menu = self.menuBar()
 		menu.addMenu(self.menu_file())
 		menu.addMenu(self.menu_process())
+		menu.addMenu(self.menu_download())
 		menu.addMenu(self.menu_about())
+	### --------------------------------------------------
+	#####################
 
 	###### BUILD ALL ######
 	def build(self):
