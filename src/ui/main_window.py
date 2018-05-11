@@ -5,6 +5,7 @@ User Interface classes.
 """
 
 from multiprocessing import Process
+from time import time
 
 from PyQt5.QtWidgets import (
     QDoubleSpinBox,
@@ -551,7 +552,7 @@ class uiMainWindow(QMainWindow):
 		if self.img_area.draw_rect:
 			self.pbar.setEnabled(True)
 			
-			path = "../.cache/crop/"
+			path = "../.cache/crop/" + str(int(time())) +"/"
 			if not os.path.exists(path):
 				os.makedirs(path)
 
@@ -567,7 +568,6 @@ class uiMainWindow(QMainWindow):
 
 			self.pbar.setMaximum(tifs.img_number)
 
-			old, _ = tifs.current()
 			tifs.active(0)
 
 			for i in range(0, tifs.img_number):
@@ -606,8 +606,7 @@ class uiMainWindow(QMainWindow):
 			self.pbar.setValue(0)
 			self.pbar.setEnabled(False)
 
-			tifs.active(old)
-			self.img_slider.setValue( old * self.img_slider.singleStep() )
+			self.img_slider.setValue( tifs.img_number * self.img_slider.singleStep() )
 
 			## Display results
 			ResultWindow(self, paths)
@@ -832,7 +831,6 @@ class uiMainWindow(QMainWindow):
 
 	def action_dl_osm_tile(self):
 		action = QAction("OpenStreetMap Tile", self)
-		action.setToolTip("Download an OpenStreetMap tile of the current region.")
 		action.triggered.connect(self.download_osm)
 		action.setEnabled(False)
 		self.osm_action = action

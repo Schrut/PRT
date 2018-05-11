@@ -1,16 +1,21 @@
+import os
+from shutil import move
+
 from PyQt5.QtWidgets import (
+    QFileDialog,
     QMainWindow,
     QScrollArea,
     QToolButton, 
     QGridLayout, 
     QHBoxLayout, 
     QVBoxLayout,
-    QShortcut,
+    QAction,
     QWidget, 
     QLabel,
+    QMenu,
 )
 
-from PyQt5.QtGui import QImage, QKeySequence
+from PyQt5.QtGui import QImage
 from PyQt5.QtCore import Qt
 
 from draw import RenderArea
@@ -57,6 +62,18 @@ class ResultWindow(QMainWindow):
             +str(len(self.paths)) 
         )
 
+    def save_sequence(self):
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            "Save sequence", 
+            "..",
+            QFileDialog.ShowDirsOnly
+        )
+
+        for path in self.paths:
+            move(path, directory)
+        
+
     def build_info(self):
         self.info = QLabel()
 
@@ -74,7 +91,7 @@ class ResultWindow(QMainWindow):
         self.update_info(self.paths[self.index])
         
         geo = self.geometry()
-        self.setGeometry(geo.x(), geo.y(), image.width()+20, image.height()+74)
+        self.setGeometry(geo.x(), geo.y(), image.width()+20, image.height()+98)
 
         layout = QHBoxLayout()
         layout.addWidget(s_area)
@@ -110,13 +127,29 @@ class ResultWindow(QMainWindow):
         grid.addLayout(self.build_buttons(), 2, 0)
         return grid
 
+    def build_menu(self):
+        menu = self.menuBar()
+        
+        action_save = QAction("Save sequence", self)
+        action_save.setShortcut("Ctrl+S")
+        action_save.triggered.connect(self.save_sequence)
+        
+        action_close = QAction("Close", self)
+        action_close.setShortcut("Ctrl+W")
+        action_close.triggered.connect(self.close)
+
+        menu_save = QMenu("File", menu)
+        menu_save.addAction(action_save)
+        menu_save.addSeparator()
+        menu_save.addAction(action_close)
+        
+        menu.addMenu(menu_save)
+
     def build(self):
         self.setWindowTitle(self.title)
-        self.setMinimumSize(200, 200)
+        self.setMinimumSize(300, 200)
         self.setGeometry(self.parent.geometry())
-
-        # Close when ctrl+w is triggered
-        QShortcut(QKeySequence("Ctrl+W"), self, self.close)
+        self.build_menu()
         
         widget = QWidget()
         widget.setLayout(self.build_grid())

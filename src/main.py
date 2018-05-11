@@ -1,9 +1,13 @@
 import sys
-from PyQt5.QtWidgets import QApplication
+import shutil
 
+from PyQt5.QtWidgets import QApplication
 from ui.main_window import uiMainWindow
 
 def main():
+    # Remove the .cache directory
+    shutil.rmtree("../.cache", ignore_errors=True)
+
     app = QApplication(sys.argv)
     win = uiMainWindow(app.primaryScreen())
     win.show()
