@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QDoubleSpinBox,
     QProgressBar,
     QRadioButton,
+	QInputDialog,
     QMainWindow,
     QFileDialog,
     QScrollArea,
@@ -68,6 +69,9 @@ from projection import (
 from .license import uiLicenseWindow
 from .view import ResultWindow
 from lbp import lbp
+from equalize import histogram_equalization
+from alignment import alignement
+from kmeans import kmeans
 
 """
 User Interface Main Window
@@ -615,7 +619,42 @@ class uiMainWindow(QMainWindow):
 		if self.tifs is None:
 			return
 
-		paths = lbp(self.tifs.paths, self.pbar)
+		radius = QInputDialog().getInt(
+			self,
+			"Local binary patterns",
+			"Radius",
+			1, 1,
+		)
+
+		paths = lbp(self.tifs.paths, radius[0], self.pbar)
+		ResultWindow(self, paths)
+
+	def apply_histo_equalization(self):
+		if self.tifs is None:
+			return
+
+		paths = histogram_equalization(self.tifs.paths, self.pbar)
+		ResultWindow(self, paths)
+
+	def apply_alignement(self):
+		if self.tifs is None:
+			return
+
+		paths = alignement(self.tifs.paths, self.pbar)
+		ResultWindow(self, paths)
+
+	def apply_kmeans(self):
+		if self.tifs is None:
+			return
+
+		K = QInputDialog.getInt(
+			self,
+			"K-Means",
+			"Number of clusters",
+			4, 1
+		)
+
+		paths = kmeans(self.tifs.paths, K[0], self.pbar)
 		ResultWindow(self, paths)
 
 	######################################################
@@ -757,11 +796,10 @@ class uiMainWindow(QMainWindow):
 		gbox2.setLayout( gvbox2 )
 		gbox2.setFixedHeight(100)
 
-		### Futures options?
+		### Future options?
 		gbox3 = QGroupBox("")
 		gvbox3 = QVBoxLayout()
 		gbox3.setLayout( gvbox3 )
-
 		### ------------
 
 		# The multiple usage progress bar
@@ -850,6 +888,22 @@ class uiMainWindow(QMainWindow):
 		action = QAction("Local Binary Patterns ", self)
 		action.triggered.connect(self.apply_lbp)
 		return action
+
+	def action_histo_equalization(self):
+		action = QAction("Histogram equalization", self)
+		action.triggered.connect(self.apply_histo_equalization)
+		return action
+
+	def action_alignment(self):
+		action = QAction("Alignement", self)
+		action.triggered.connect(self.apply_alignement)
+		return action
+
+	def action_kmeans(self):
+		action = QAction("K-Means", self)
+		action.triggered.connect(self.apply_kmeans)
+		return action
+	
 	### --------------------------------------------------------
 
 	### MENU BAR MENUS:
@@ -864,7 +918,10 @@ class uiMainWindow(QMainWindow):
 		menu = QMenu("Process", self.menuBar())
 		menu.addAction(self.action_draw_histogram())
 		menu.addAction(self.action_gdal())
+		menu.addAction(self.action_histo_equalization())
+		menu.addAction(self.action_alignment())
 		menu.addAction(self.action_lbp())
+		menu.addAction(self.action_kmeans())
 		return menu
 
 	def menu_download(self):

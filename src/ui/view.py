@@ -38,14 +38,21 @@ class ResultWindow(QMainWindow):
         pathname = self.paths[index]
         image: QImage = None
 
+        # If the file is TIFF Image, read it with the Tiff class
+        # the `to_QImage()` function is needed.
+        # Else, read it directly with QImage constructor.
         extension = os.path.splitext(pathname)[1]
         if extension == '.tiff' or extension == '.tif':
             image = Tiff(pathname).to_QImage()
         else:
             image = QImage(pathname)
         
-        if len(self.area.images) > 0:
+        # Only pop if there is already an image
+        # into the stack
+        if self.area.images:
             self.area.pop()
+        
+        # Draw
         self.area.push(image)
         self.area.update()
         self.update_info(pathname)
@@ -81,12 +88,16 @@ class ResultWindow(QMainWindow):
             QFileDialog.ShowDirsOnly
         )
 
+        # In case user pressed "Cancel"
         if directory == '':
             return
 
+        # The `move()` function doesn't really need the
+        # destination file pathname. It can works just with a dest directory.
+        # But, in case the dest file already exists, it will fail.
+        # So, it's better to give the full destination file pathname.
         for path in self.paths:
-            move(path, directory)
-        
+            move(path, directory+"/"+os.path.basename(path))        
 
     def build_info(self):
         self.info = QLabel()
@@ -112,14 +123,12 @@ class ResultWindow(QMainWindow):
 
     def build_buttons(self):
         arrow_left = QToolButton()
-        arrow_left.setAutoRepeatDelay(1)
         arrow_left.setAcceptDrops(True)
         arrow_left.setAutoRepeat(True)
         arrow_left.setArrowType(Qt.LeftArrow)
         arrow_left.clicked.connect(self.shift_left)
 
         arrow_right = QToolButton()
-        arrow_left.setAutoRepeatDelay(1)
         arrow_right.setAcceptDrops(True)
         arrow_right.setAutoRepeat(True)
         arrow_right.setArrowType(Qt.RightArrow)
