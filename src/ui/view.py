@@ -70,6 +70,9 @@ class ResultWindow(QMainWindow):
             QFileDialog.ShowDirsOnly
         )
 
+        if directory == '':
+            return
+
         for path in self.paths:
             move(path, directory)
         

@@ -67,7 +67,7 @@ from projection import (
 
 from .license import uiLicenseWindow
 from .view import ResultWindow
-
+from lbp import lbp
 
 """
 User Interface Main Window
@@ -611,6 +611,12 @@ class uiMainWindow(QMainWindow):
 			## Display results
 			ResultWindow(self, paths)
 
+	def apply_lbp(self):
+		if self.tifs is None:
+			return
+
+		paths = lbp(self.tifs.paths, self.pbar)
+
 	######################################################
 	######################################################
 	###### Interface ######
@@ -733,7 +739,7 @@ class uiMainWindow(QMainWindow):
 		layout_color = QHBoxLayout()
 		layout_color.addWidget(label_color)
 		layout_color.addWidget(cbox_color)
-		layout_color.setAlignment(Qt.AlignTop)
+		layout_color.setAlignment(Qt.AlignHCenter)
 
 		crop_button = QPushButton("Make a crop")
 		crop_button.clicked.connect(self.make_a_crop)
@@ -750,7 +756,10 @@ class uiMainWindow(QMainWindow):
 		gbox2.setLayout( gvbox2 )
 		gbox2.setFixedHeight(100)
 
-		gbox3 = QGroupBox("others?")
+		### Futures options?
+		gbox3 = QGroupBox("")
+		gvbox3 = QVBoxLayout()
+		gbox3.setLayout( gvbox3 )
 
 		### ------------
 
@@ -835,6 +844,11 @@ class uiMainWindow(QMainWindow):
 		action.setEnabled(False)
 		self.osm_action = action
 		return action
+
+	def action_lbp(self):
+		action = QAction("Local Binary Patterns ", self)
+		action.triggered.connect(self.apply_lbp)
+		return action
 	### --------------------------------------------------------
 
 	### MENU BAR MENUS:
@@ -849,6 +863,7 @@ class uiMainWindow(QMainWindow):
 		menu = QMenu("Process", self.menuBar())
 		menu.addAction(self.action_draw_histogram())
 		menu.addAction(self.action_gdal())
+		menu.addAction(self.action_lbp())
 		return menu
 
 	def menu_download(self):
