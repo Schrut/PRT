@@ -19,6 +19,7 @@ from PyQt5.QtGui import QImage
 from PyQt5.QtCore import Qt
 
 from draw import RenderArea
+from img import Tiff
 
 class ResultWindow(QMainWindow):
     def __init__(self, parent: QWidget, paths):
@@ -33,25 +34,35 @@ class ResultWindow(QMainWindow):
         self.build()
         self.show()
 
+    def read_img(self, index: int):
+        pathname = self.paths[index]
+        image: QImage = None
+
+        extension = os.path.splitext(pathname)[1]
+        if extension == '.tiff' or extension == '.tif':
+            image = Tiff(pathname).to_QImage()
+        else:
+            image = QImage(pathname)
+        
+        if len(self.area.images) > 0:
+            self.area.pop()
+        self.area.push(image)
+        self.area.update()
+        self.update_info(pathname)
+
+        return image
+
     def shift_left(self):
         if self.index > 0:
             self.index -= 1
 
-        self.area.pop()
-        self.area.push(QImage(self.paths[self.index]))
-        self.area.update()
-
-        self.update_info(self.paths[self.index])
+        self.read_img(self.index)
 
     def shift_right(self):
         if self.index < (len(self.paths)-1):
             self.index += 1
 
-        self.area.pop()
-        self.area.push(QImage(self.paths[self.index]))
-        self.area.update()
-
-        self.update_info(self.paths[self.index])
+        self.read_img(self.index)
 
     def update_info(self, text):
         self.info.setText(
@@ -89,9 +100,7 @@ class ResultWindow(QMainWindow):
         s_area = QScrollArea()
         s_area.setWidget(self.area)
 
-        image = QImage(self.paths[self.index])
-        self.area.push(image)
-        self.update_info(self.paths[self.index])
+        image = self.read_img(self.index)
         
         geo = self.geometry()
         self.setGeometry(geo.x(), geo.y(), image.width()+20, image.height()+98)

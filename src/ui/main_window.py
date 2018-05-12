@@ -616,6 +616,7 @@ class uiMainWindow(QMainWindow):
 			return
 
 		paths = lbp(self.tifs.paths, self.pbar)
+		ResultWindow(self, paths)
 
 	######################################################
 	######################################################

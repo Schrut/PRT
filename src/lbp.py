@@ -7,7 +7,7 @@ from time import time
 
 from PyQt5.QtWidgets import QProgressBar
 
-def lbp(paths, pbar):
+def lbp(paths, pbar: QProgressBar):
     spath = "../.cache/lbp/" + str(int(time())) + "/"
 
     pbar.setMaximum(len(paths))
