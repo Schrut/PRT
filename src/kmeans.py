@@ -27,7 +27,9 @@ def kmeans(paths, nclusters, pbar: QProgressBar):
         Z = np.float32(img.ravel())
 
         ret, label, center = cv2.kmeans(Z, nclusters, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+
         center = np.uint16(center) #Convert to 16bits
+
         res = center[ label.flatten() ]
         res2 = res.reshape((img.shape)) # K-Means images
 
