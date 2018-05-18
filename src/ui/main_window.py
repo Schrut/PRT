@@ -643,6 +643,9 @@ class uiMainWindow(QMainWindow):
 			1, 1,
 		)
 
+		if radius[1] is False:
+			return
+
 		paths = lbp(self.tifs.paths, radius[0], self.pbar)
 		ResultWindow(self, paths)
 
@@ -670,6 +673,9 @@ class uiMainWindow(QMainWindow):
 			"Number of clusters",
 			4, 1
 		)
+
+		if K[1] is False:
+			return
 
 		paths = kmeans(self.tifs.paths, K[0], self.pbar)
 		ResultWindow(self, paths)
