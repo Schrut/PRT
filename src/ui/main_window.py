@@ -9,6 +9,7 @@ from time import time
 
 from PyQt5.QtWidgets import (
     QDoubleSpinBox,
+	QMessageBox,
     QProgressBar,
     QRadioButton,
 	QInputDialog,
@@ -501,24 +502,40 @@ class uiMainWindow(QMainWindow):
 		lry = uly + (src.RasterYSize * yres)
 
 		self.pbar.setValue(40)
+                
+		try:
+			# Download an OpenStreetMap Tile thanks to smopy
+			# Warning: the Tile you are going to download, 
+			# is bigger than the zone expected.
+			_map = smopy.Map((uly, ulx, lry, lrx), z=6)
 
-		# Download an OpenStreetMap Tile thanks to smopy
-		# Warning: the Tile you are going to download, 
-		# is bigger than the zone expected.
-		_map = smopy.Map((uly, ulx, lry, lrx), z=6)
+			self.pbar.setValue(80)
 
-		self.pbar.setValue(80)
-
-		# Save image
-		path = "../.cache/osm/"
-		if not os.path.exists(path):
-			os.makedirs(path)
+			# Save image
+			path = "../.cache/osm/"
+			if not os.path.exists(path):
+				os.makedirs(path)
 		
-		_map.save_png(path+"map.png")
+			_map.save_png(path+"map.png")
 
-		# Get top-left & bot-righet corners pixels coordinates:
-		x, y = _map.to_pixels(uly, ulx)
-		xx, yy = _map.to_pixels(lry, lrx)
+			# Get top-left & bot-righet corners pixels coordinates:
+			x, y = _map.to_pixels(uly, ulx)
+			xx, yy = _map.to_pixels(lry, lrx)
+
+		except:
+			
+			## ERROR Dialog Message
+			ok = QMessageBox.warning(
+				self,
+				"Error: failed to download.",
+				"Download of tiles from OpenStreetMap failed.<br>\
+				You should check your internet connection.",
+				QMessageBox.Ok
+			)
+
+			self.pbar.setValue(0)
+			self.pbar.setEnabled(False)
+			return
 
 		# Compute distance between those points:
 		# Those distances, will be the size of our mercator 
